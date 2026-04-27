@@ -1,0 +1,10 @@
+# Rojo build outputs
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx
+
+# OS / editor noise
+.DS_Store
+.vscode/
+*.swp
