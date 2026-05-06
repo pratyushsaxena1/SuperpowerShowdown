@@ -1100,37 +1100,39 @@ local function buildPreviewRig()
 end
 
 local function setupSkinViewport(parent, skinName, accent)
+	-- Bigger viewport (200 vs 170) gives the character room for full
+	-- head-to-feet framing. Strong ambient + bright key light pull the
+	-- skin's body color forward instead of drowning it in shadow.
 	local viewport = make("ViewportFrame", {
 		Name = "Preview",
-		Size = UDim2.new(1, -20, 0, 170),
+		Size = UDim2.new(1, -20, 0, 200),
 		Position = UDim2.new(0, 10, 0, 10),
 		BackgroundColor3 = Color3.fromRGB(40, 40, 55),
 		BorderSizePixel = 0,
-		Ambient = Color3.fromRGB(255, 255, 255),
-		LightColor = Color3.fromRGB(255, 255, 255),
-		LightDirection = Vector3.new(-0.5, -0.7, -0.5),
+		Ambient = Color3.fromRGB(220, 220, 235),
+		LightColor = Color3.fromRGB(255, 250, 240),
+		LightDirection = Vector3.new(-0.4, -0.6, -0.7),
 		ZIndex = 94,
 		Parent = parent,
-	}, { corner(8), stroke(2, accent) })
+	}, { corner(10), stroke(2, accent) })
 
-	-- Backdrop gradient: hot accent color at the top fading to a dim
-	-- neutral at the bottom. Old version went to near-black, which made
-	-- the character's feet disappear into the lower half of the card.
+	-- Backdrop: bright accent halo at the TOP fading to a soft mid tone
+	-- at the BOTTOM (no near-black). Adds a vignette feel without
+	-- hiding the character's feet.
 	local gradient = Instance.new("UIGradient")
 	gradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, accent:Lerp(Color3.fromRGB(255, 255, 255), 0.30)),
-		ColorSequenceKeypoint.new(0.55, accent:Lerp(Color3.fromRGB(40, 40, 60), 0.55)),
-		ColorSequenceKeypoint.new(1, accent:Lerp(Color3.fromRGB(40, 40, 60), 0.85)),
+		ColorSequenceKeypoint.new(0, accent:Lerp(Color3.fromRGB(255, 255, 255), 0.40)),
+		ColorSequenceKeypoint.new(0.5, accent:Lerp(Color3.fromRGB(60, 60, 84), 0.55)),
+		ColorSequenceKeypoint.new(1, accent:Lerp(Color3.fromRGB(48, 48, 70), 0.75)),
 	})
 	gradient.Rotation = 90
 	gradient.Parent = viewport
 
-	-- Camera sits at slight 3/4 angle in front of the character so faces
-	-- and details on both shoulders read. Y=1 gives a faint downward tilt
-	-- that flatters R15 proportions; previous Y=-0.4 looked bottom-up.
+	-- Pulled the camera back slightly (-10z) and lifted Y to 1.5 so the
+	-- character has air above the head and a hint of floor below the feet.
 	local cam = Instance.new("Camera")
-	cam.FieldOfView = 30
-	cam.CFrame = CFrame.lookAt(Vector3.new(2.5, 1.2, -9.5), Vector3.new(0, -0.2, 0))
+	cam.FieldOfView = 28
+	cam.CFrame = CFrame.lookAt(Vector3.new(2.6, 1.5, -10), Vector3.new(0, -0.4, 0))
 	cam.Parent = viewport
 	viewport.CurrentCamera = cam
 
@@ -1196,25 +1198,40 @@ local function buildStore(snapshot)
 	cardGuard.MouseButton1Click:Connect(function() end)
 
 	make("TextLabel", {
-		Name = "Title", Size = UDim2.new(0, 240, 0, 36), Position = UDim2.new(0, 24, 0, 22),
-		BackgroundTransparency = 1, Font = Enum.Font.GothamMedium,
-		TextColor3 = Color3.fromRGB(245, 245, 250), TextXAlignment = Enum.TextXAlignment.Left,
-		TextSize = 26, Text = "Store", ZIndex = 92, Parent = card,
+		Name = "Title", Size = UDim2.new(0, 320, 0, 32), Position = UDim2.new(0, 24, 0, 18),
+		BackgroundTransparency = 1, Font = Enum.Font.GothamBlack,
+		TextColor3 = Color3.fromRGB(255, 230, 120), TextXAlignment = Enum.TextXAlignment.Left,
+		TextSize = 24, Text = "STORE", ZIndex = 92, Parent = card,
+	})
+	make("TextLabel", {
+		Name = "Subtitle", Size = UDim2.new(0, 320, 0, 16), Position = UDim2.new(0, 24, 0, 50),
+		BackgroundTransparency = 1, Font = Enum.Font.Gotham,
+		TextColor3 = Color3.fromRGB(150, 150, 175), TextXAlignment = Enum.TextXAlignment.Left,
+		TextSize = 12, Text = "Skins, kill effects, finishing moves, and coin packs.",
+		ZIndex = 92, Parent = card,
 	})
 
-	-- Coin balance pill, top-right next to the close button. Updated
-	-- whenever the snapshot is rebuilt and on Coins attribute changes.
+	-- Coin balance pill, top-right next to the close button. Now has a
+	-- diamond glyph at the front and uses GothamBold for stronger read.
 	local coinPill = make("Frame", {
 		Name = "CoinPill", AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -68, 0, 24), Size = UDim2.new(0, 160, 0, 32),
-		BackgroundColor3 = Color3.fromRGB(28, 28, 42), BorderSizePixel = 0,
+		Position = UDim2.new(1, -68, 0, 22), Size = UDim2.new(0, 170, 0, 36),
+		BackgroundColor3 = Color3.fromRGB(28, 30, 46), BorderSizePixel = 0,
 		ZIndex = 93, Parent = card,
-	}, { corner(8), stroke(1, Color3.fromRGB(255, 220, 110)) })
+	}, { corner(10), stroke(1, Color3.fromRGB(255, 220, 110)) })
+	make("TextLabel", {
+		Name = "CoinIcon", Position = UDim2.new(0, 12, 0, 0),
+		Size = UDim2.new(0, 22, 1, 0), BackgroundTransparency = 1,
+		Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 220, 120),
+		TextXAlignment = Enum.TextXAlignment.Left, TextSize = 16,
+		Text = "◆", ZIndex = 93, Parent = coinPill,
+	})
 	local coinLabel = make("TextLabel", {
-		Size = UDim2.new(1, -16, 1, 0), Position = UDim2.new(0, 8, 0, 0),
-		BackgroundTransparency = 1, Font = Enum.Font.GothamMedium,
-		TextColor3 = Color3.fromRGB(255, 220, 110), TextXAlignment = Enum.TextXAlignment.Center,
-		TextSize = 14, Text = formatCoins(snapshot.coins) .. "  Coins",
+		Position = UDim2.new(0, 36, 0, 0),
+		Size = UDim2.new(1, -46, 1, 0), BackgroundTransparency = 1,
+		Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 230, 130),
+		TextXAlignment = Enum.TextXAlignment.Left, TextSize = 14,
+		Text = formatCoins(snapshot.coins),
 		ZIndex = 93, Parent = coinPill,
 	})
 
@@ -1327,7 +1344,7 @@ local function buildStore(snapshot)
 		local res = StoreActionRF:InvokeServer(payload)
 		if res and res.state then
 			current = res.state
-			coinLabel.Text = formatCoins(current.coins) .. "  Coins"
+			coinLabel.Text = formatCoins(current.coins)
 			renderTab()
 		end
 		if res and res.reason == "prompted" then
@@ -1413,21 +1430,47 @@ local function buildStore(snapshot)
 
 		setupSkinViewport(cell, item.name, accent)
 
-		-- Title and description now sit in the 60px between the viewport
-		-- bottom (y=180) and the action button strip (y=264 for unowned,
-		-- y=300 for owned). Old layout had ~110px of dead space here.
+		-- Status badge in the top-right corner of the viewport area.
+		-- "EQUIPPED" pops in green, "OWNED" in yellow, locked items get
+		-- nothing (the price IS the status).
+		if item.equipped then
+			local badge = make("Frame", {
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, -16, 0, 16), Size = UDim2.new(0, 86, 0, 22),
+				BackgroundColor3 = Color3.fromRGB(34, 130, 70), BorderSizePixel = 0,
+				ZIndex = 95, Parent = cell,
+			}, { corner(6) })
+			make("TextLabel", {
+				Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
+				Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(220, 255, 230),
+				TextSize = 11, Text = "EQUIPPED", ZIndex = 96, Parent = badge,
+			})
+		elseif item.owned then
+			local badge = make("Frame", {
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, -16, 0, 16), Size = UDim2.new(0, 70, 0, 22),
+				BackgroundColor3 = Color3.fromRGB(180, 140, 50), BorderSizePixel = 0,
+				ZIndex = 95, Parent = cell,
+			}, { corner(6) })
+			make("TextLabel", {
+				Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
+				Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 245, 220),
+				TextSize = 11, Text = "OWNED", ZIndex = 96, Parent = badge,
+			})
+		end
+
 		make("TextLabel", {
-			Size = UDim2.new(1, -16, 0, 22), Position = UDim2.new(0, 8, 0, 184),
-			BackgroundTransparency = 1, Font = Enum.Font.GothamMedium,
-			TextColor3 = Color3.fromRGB(245, 245, 250), TextSize = 16,
+			Size = UDim2.new(1, -16, 0, 22), Position = UDim2.new(0, 8, 0, 216),
+			BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
+			TextColor3 = Color3.fromRGB(245, 245, 250), TextSize = 17,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Text = item.displayName or item.name, ZIndex = 94, Parent = cell,
 		})
 
 		make("TextLabel", {
-			Size = UDim2.new(1, -16, 0, 50), Position = UDim2.new(0, 8, 0, 208),
+			Size = UDim2.new(1, -16, 0, 50), Position = UDim2.new(0, 8, 0, 240),
 			BackgroundTransparency = 1, Font = Enum.Font.Gotham, TextWrapped = true,
-			TextColor3 = Color3.fromRGB(170, 170, 190), TextSize = 11,
+			TextColor3 = Color3.fromRGB(180, 180, 200), TextSize = 11,
 			TextYAlignment = Enum.TextYAlignment.Top,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Text = item.description or "", ZIndex = 94, Parent = cell,
@@ -1497,13 +1540,15 @@ local function buildStore(snapshot)
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			ZIndex = 91, Parent = content,
 		})
+		-- Cell size 224x376: viewport is 200 (was 170), title at y=216,
+		-- description y=240..290, action buttons at y=300/336.
 		local grid = make("Frame", {
 			Size = UDim2.new(1, -10, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1, ZIndex = 91, Parent = scroller,
 		}, {
 			make("UIGridLayout", {
-				CellSize = UDim2.new(0, 224, 0, 340),
+				CellSize = UDim2.new(0, 224, 0, 376),
 				CellPadding = UDim2.new(0, 12, 0, 12),
 				FillDirectionMaxCells = 4,
 				HorizontalAlignment = Enum.HorizontalAlignment.Center,
@@ -1608,7 +1653,7 @@ local function buildStore(snapshot)
 		local snap = refreshStore()
 		if snap then
 			current = snap
-			coinLabel.Text = formatCoins(current.coins) .. " COINS"
+			coinLabel.Text = formatCoins(current.coins)
 			renderTab()
 			status.Text = "Updated."
 		end
@@ -1875,9 +1920,11 @@ end)
 -- Leaderboard panel docks to the right edge so it never blocks the center
 -- of the screen. Same dark-navy + yellow-accent treatment as the rank
 -- panel below it for visual cohesion.
+-- Panel docks under the trophy button (button at y=58 + 40 height + 8 px
+-- gap = y=106) so they read as the same UI cluster.
 local lbPanel = make("Frame", {
 	Name = "Leaderboard", AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -16, 0, 58), Size = UDim2.new(0, 340, 0, 440),
+	Position = UDim2.new(1, -16, 0, 106), Size = UDim2.new(0, 340, 0, 440),
 	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.05,
 	BorderSizePixel = 0, Visible = false, ZIndex = 90, Parent = hud,
 }, { corner(12), stroke(1, Color3.fromRGB(70, 70, 95)) })
@@ -2061,15 +2108,15 @@ local function toggleLeaderboard(forceVisible)
 end
 lbCloseBtn.MouseButton1Click:Connect(function() toggleLeaderboard(false) end)
 
--- Leaderboard button: visually pairs with the rank panel above it (same
--- width, same corner radius, navy fill with a yellow stroke instead of a
--- saturated yellow blob).
+-- Leaderboard button: docked to the top-right corner so it lives next to
+-- the panel it opens. Compact size + trophy glyph keeps it readable on
+-- mobile without crowding the lobby.
 local lbButton = make("TextButton", {
-	Name = "LBButton", AnchorPoint = Vector2.new(0, 0),
-	Position = UDim2.new(0, 16, 0, 222), Size = UDim2.new(0, 300, 0, 38),
+	Name = "LBButton", AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -16, 0, 58), Size = UDim2.new(0, 180, 0, 40),
 	BackgroundColor3 = Color3.fromRGB(28, 30, 50), AutoButtonColor = true,
-	Font = Enum.Font.GothamMedium, TextColor3 = Color3.fromRGB(255, 220, 120),
-	TextSize = 14, Text = "TOP PLAYERS", ZIndex = 18, Parent = hud,
+	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 220, 120),
+	TextSize = 14, Text = "🏆  TOP PLAYERS", ZIndex = 18, Parent = hud,
 }, { corner(12), stroke(1, Color3.fromRGB(255, 220, 120)) })
 lbButton.MouseButton1Click:Connect(function()
 	if state.inMatch then return end
