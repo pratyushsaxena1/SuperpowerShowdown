@@ -1689,36 +1689,65 @@ end)
 -- so the lobby HUD reads as one cohesive design system.
 local storeButton = make("TextButton", {
 	Name = "StoreButton", AnchorPoint = Vector2.new(0, 1),
-	Position = UDim2.new(0, 16, 1, -56), Size = UDim2.new(0, 170, 0, 38),
-	BackgroundColor3 = Color3.fromRGB(28, 30, 50), AutoButtonColor = true,
-	Font = Enum.Font.GothamMedium, TextColor3 = Color3.fromRGB(245, 230, 170),
-	TextSize = 13, Text = "Store", ZIndex = 20, Parent = hud,
-}, { corner(10), stroke(1, Color3.fromRGB(140, 130, 90)) })
+	Position = UDim2.new(0, 16, 1, -58), Size = UDim2.new(0, 200, 0, 42),
+	BackgroundColor3 = Color3.fromRGB(34, 36, 56), AutoButtonColor = true,
+	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 220, 110),
+	TextSize = 15, Text = "Store", ZIndex = 20, Parent = hud,
+}, { corner(10), stroke(1, Color3.fromRGB(220, 180, 80)) })
+-- Subtle top-bright/bottom-dark gradient gives the button a sense of
+-- depth without losing the flat, "modern Roblox UI" feel.
+local storeGradient = Instance.new("UIGradient")
+storeGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(48, 50, 74)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(28, 30, 46)),
+})
+storeGradient.Rotation = 90
+storeGradient.Parent = storeButton
 storeButton.MouseButton1Click:Connect(function()
 	if state.inMatch then return end
 	local snap = refreshStore()
 	if snap then buildStore(snap) end
 end)
 
+-- Coins chip sits directly under the Store button. Width matches the
+-- button (200) so the two read as a stacked pair. The "◆ N" content is
+-- center-aligned for a clean balance.
 local coinsChip = make("Frame", {
 	Name = "CoinsChip", AnchorPoint = Vector2.new(0, 1),
-	Position = UDim2.new(0, 16, 1, -12), Size = UDim2.new(0, 180, 0, 32),
+	Position = UDim2.new(0, 16, 1, -12), Size = UDim2.new(0, 200, 0, 32),
 	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.05,
 	BorderSizePixel = 0, ZIndex = 20, Parent = hud,
 }, { corner(10), stroke(1, Color3.fromRGB(70, 70, 95)) })
+
+-- Wrap the icon + value in a centered horizontal layout so the cluster
+-- is centered as a unit no matter the digit count.
+local coinInner = make("Frame", {
+	Size = UDim2.new(1, -16, 1, 0), Position = UDim2.new(0, 8, 0, 0),
+	BackgroundTransparency = 1, ZIndex = 21, Parent = coinsChip,
+}, {
+	make("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		VerticalAlignment = Enum.VerticalAlignment.Center,
+		Padding = UDim.new(0, 6),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+	}),
+})
 make("TextLabel", {
-	Name = "CoinIcon", Position = UDim2.new(0, 10, 0, 0),
-	Size = UDim2.new(0, 20, 1, 0), BackgroundTransparency = 1,
-	Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 220, 120),
-	TextXAlignment = Enum.TextXAlignment.Left, TextSize = 14,
-	Text = "◆", ZIndex = 21, Parent = coinsChip,
+	Name = "CoinIcon", LayoutOrder = 1,
+	Size = UDim2.new(0, 16, 1, 0), AutomaticSize = Enum.AutomaticSize.X,
+	BackgroundTransparency = 1, Font = Enum.Font.GothamBlack,
+	TextColor3 = Color3.fromRGB(255, 220, 110), TextSize = 14,
+	Text = "◆", ZIndex = 22, Parent = coinInner,
 })
 local coinsLabel = make("TextLabel", {
-	Name = "CoinsLabel", Position = UDim2.new(0, 32, 0, 0),
-	Size = UDim2.new(1, -42, 1, 0), BackgroundTransparency = 1,
-	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 220, 120),
+	Name = "CoinsLabel", LayoutOrder = 2,
+	AutomaticSize = Enum.AutomaticSize.X,
+	Size = UDim2.new(0, 1, 1, 0),
+	BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
+	TextColor3 = Color3.fromRGB(255, 220, 110),
 	TextXAlignment = Enum.TextXAlignment.Left, TextSize = 14,
-	Text = "0", ZIndex = 21, Parent = coinsChip,
+	Text = "0", ZIndex = 22, Parent = coinInner,
 })
 
 local function updateCoinsChip()
@@ -1727,14 +1756,14 @@ end
 updateCoinsChip()
 player:GetAttributeChangedSignal("Coins"):Connect(updateCoinsChip)
 
--- ----- Lobby Rank+Stats panel (top-left) -------------------------------------
--- Hidden during a match. Three rows: tier line + Elo, progress bar to the
--- next tier, stats row (W / L / Win-Rate / Streak / Best).
--- Y=58 keeps it under the Roblox topbar (chat/leaderstats icons live in 0..36).
--- Width 300 + height 156 gives the stats row room to breathe at TextSize 22.
+-- ----- Lobby Rank+Stats panel (top-right) ------------------------------------
+-- Stacks above the Top Players button on the right side of the screen so
+-- the lobby HUD reads as one cluster on the right and the bottom-left
+-- carries the store + coins. Three rows: tier line + Elo, progress bar to
+-- the next tier, stats row (W / L / Win-Rate / Streak / Best).
 local rankPanel = make("Frame", {
-	Name = "RankPanel", AnchorPoint = Vector2.new(0, 0),
-	Position = UDim2.new(0, 16, 0, 58), Size = UDim2.new(0, 300, 0, 156),
+	Name = "RankPanel", AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -16, 0, 58), Size = UDim2.new(0, 300, 0, 156),
 	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.05,
 	BorderSizePixel = 0, ZIndex = 18, Parent = hud,
 }, { corner(12), stroke(1, Color3.fromRGB(70, 70, 95)) })
@@ -1920,11 +1949,12 @@ end)
 -- Leaderboard panel docks to the right edge so it never blocks the center
 -- of the screen. Same dark-navy + yellow-accent treatment as the rank
 -- panel below it for visual cohesion.
--- Panel docks under the trophy button (button at y=58 + 40 height + 8 px
--- gap = y=106) so they read as the same UI cluster.
+-- Panel docks below the rank panel + button cluster (rank ends at y=214,
+-- button at 222–262, panel starts at 270). Width matches so the column
+-- reads as a single block.
 local lbPanel = make("Frame", {
 	Name = "Leaderboard", AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -16, 0, 106), Size = UDim2.new(0, 340, 0, 440),
+	Position = UDim2.new(1, -16, 0, 270), Size = UDim2.new(0, 300, 0, 380),
 	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.05,
 	BorderSizePixel = 0, Visible = false, ZIndex = 90, Parent = hud,
 }, { corner(12), stroke(1, Color3.fromRGB(70, 70, 95)) })
@@ -2111,13 +2141,22 @@ lbCloseBtn.MouseButton1Click:Connect(function() toggleLeaderboard(false) end)
 -- Leaderboard button: docked to the top-right corner so it lives next to
 -- the panel it opens. Compact size + trophy glyph keeps it readable on
 -- mobile without crowding the lobby.
+-- Sits directly below the rank panel for a tight cluster on the right.
+-- Same width as the rank panel (300) so the two read as a single column.
 local lbButton = make("TextButton", {
 	Name = "LBButton", AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -16, 0, 58), Size = UDim2.new(0, 170, 0, 38),
-	BackgroundColor3 = Color3.fromRGB(28, 30, 50), AutoButtonColor = true,
-	Font = Enum.Font.GothamMedium, TextColor3 = Color3.fromRGB(245, 230, 170),
-	TextSize = 13, Text = "🏆  Top Players", ZIndex = 18, Parent = hud,
-}, { corner(10), stroke(1, Color3.fromRGB(140, 130, 90)) })
+	Position = UDim2.new(1, -16, 0, 222), Size = UDim2.new(0, 300, 0, 42),
+	BackgroundColor3 = Color3.fromRGB(34, 36, 56), AutoButtonColor = true,
+	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 220, 110),
+	TextSize = 14, Text = "🏆  Top Players", ZIndex = 18, Parent = hud,
+}, { corner(10), stroke(1, Color3.fromRGB(220, 180, 80)) })
+local lbGradient2 = Instance.new("UIGradient")
+lbGradient2.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(48, 50, 74)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(28, 30, 46)),
+})
+lbGradient2.Rotation = 90
+lbGradient2.Parent = lbButton
 lbButton.MouseButton1Click:Connect(function()
 	if state.inMatch then return end
 	toggleLeaderboard()
