@@ -273,10 +273,10 @@ local function openAbilitySelect(info)
 	-- like part of the same product, not a separate UI era.
 	make("TextLabel", {
 		Name = "Title",
-		Size = UDim2.new(0, 480, 0, 32), Position = UDim2.new(0, 28, 0, 20),
-		BackgroundTransparency = 1, Font = Enum.Font.GothamBlack,
-		TextColor3 = Color3.fromRGB(255, 230, 120), TextSize = 24,
-		Text = "CHOOSE YOUR POWER", TextXAlignment = Enum.TextXAlignment.Left,
+		Size = UDim2.new(0, 480, 0, 30), Position = UDim2.new(0, 28, 0, 22),
+		BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
+		TextColor3 = Color3.fromRGB(245, 230, 170), TextSize = 22,
+		Text = "Choose your power", TextXAlignment = Enum.TextXAlignment.Left,
 		ZIndex = 82, Parent = card,
 	})
 	make("TextLabel", {
@@ -1198,13 +1198,13 @@ local function buildStore(snapshot)
 	cardGuard.MouseButton1Click:Connect(function() end)
 
 	make("TextLabel", {
-		Name = "Title", Size = UDim2.new(0, 320, 0, 32), Position = UDim2.new(0, 24, 0, 18),
-		BackgroundTransparency = 1, Font = Enum.Font.GothamBlack,
-		TextColor3 = Color3.fromRGB(255, 230, 120), TextXAlignment = Enum.TextXAlignment.Left,
-		TextSize = 24, Text = "STORE", ZIndex = 92, Parent = card,
+		Name = "Title", Size = UDim2.new(0, 320, 0, 30), Position = UDim2.new(0, 24, 0, 18),
+		BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
+		TextColor3 = Color3.fromRGB(245, 230, 170), TextXAlignment = Enum.TextXAlignment.Left,
+		TextSize = 22, Text = "Store", ZIndex = 92, Parent = card,
 	})
 	make("TextLabel", {
-		Name = "Subtitle", Size = UDim2.new(0, 320, 0, 16), Position = UDim2.new(0, 24, 0, 50),
+		Name = "Subtitle", Size = UDim2.new(0, 420, 0, 16), Position = UDim2.new(0, 24, 0, 48),
 		BackgroundTransparency = 1, Font = Enum.Font.Gotham,
 		TextColor3 = Color3.fromRGB(150, 150, 175), TextXAlignment = Enum.TextXAlignment.Left,
 		TextSize = 12, Text = "Skins, kill effects, finishing moves, and coin packs.",
@@ -1689,11 +1689,11 @@ end)
 -- so the lobby HUD reads as one cohesive design system.
 local storeButton = make("TextButton", {
 	Name = "StoreButton", AnchorPoint = Vector2.new(0, 1),
-	Position = UDim2.new(0, 16, 1, -56), Size = UDim2.new(0, 180, 0, 40),
+	Position = UDim2.new(0, 16, 1, -56), Size = UDim2.new(0, 170, 0, 38),
 	BackgroundColor3 = Color3.fromRGB(28, 30, 50), AutoButtonColor = true,
-	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 220, 120),
-	TextSize = 14, Text = "STORE", ZIndex = 20, Parent = hud,
-}, { corner(12), stroke(1, Color3.fromRGB(255, 220, 120)) })
+	Font = Enum.Font.GothamMedium, TextColor3 = Color3.fromRGB(245, 230, 170),
+	TextSize = 13, Text = "Store", ZIndex = 20, Parent = hud,
+}, { corner(10), stroke(1, Color3.fromRGB(140, 130, 90)) })
 storeButton.MouseButton1Click:Connect(function()
 	if state.inMatch then return end
 	local snap = refreshStore()
@@ -1751,18 +1751,18 @@ rankGradient.Parent = rankPanel
 
 local rankTierLbl = make("TextLabel", {
 	Name = "Tier", AnchorPoint = Vector2.new(0, 0),
-	Position = UDim2.new(0, 14, 0, 10), Size = UDim2.new(1, -120, 0, 30),
-	BackgroundTransparency = 1, Font = Enum.Font.GothamBlack,
+	Position = UDim2.new(0, 14, 0, 12), Size = UDim2.new(1, -120, 0, 28),
+	BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
 	TextColor3 = Color3.fromRGB(220, 150, 90),
-	TextXAlignment = Enum.TextXAlignment.Left, TextSize = 22,
-	Text = "BRONZE", ZIndex = 19, Parent = rankPanel,
+	TextXAlignment = Enum.TextXAlignment.Left, TextSize = 20,
+	Text = "Bronze", ZIndex = 19, Parent = rankPanel,
 })
 local rankEloLbl = make("TextLabel", {
 	Name = "Elo", AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -14, 0, 12), Size = UDim2.new(0, 110, 0, 26),
+	Position = UDim2.new(1, -14, 0, 14), Size = UDim2.new(0, 110, 0, 24),
 	BackgroundTransparency = 1, Font = Enum.Font.GothamMedium,
-	TextColor3 = Color3.fromRGB(220, 220, 240),
-	TextXAlignment = Enum.TextXAlignment.Right, TextSize = 16,
+	TextColor3 = Color3.fromRGB(200, 200, 225),
+	TextXAlignment = Enum.TextXAlignment.Right, TextSize = 14,
 	Text = "Elo 0", ZIndex = 19, Parent = rankPanel,
 })
 
@@ -1834,7 +1834,7 @@ local function refreshRankPanel()
 	local bestN = player:GetAttribute("BestStreak") or 0
 	local pct, tier, nextTier = Ranks.progress(elo)
 
-	rankTierLbl.Text = string.upper(tier.name)
+	rankTierLbl.Text = tier.name
 	rankTierLbl.TextColor3 = tier.accent
 	rankEloLbl.Text = "Elo " .. tostring(elo)
 	progressFill.Size = UDim2.new(pct, 0, 1, 0)
@@ -1939,10 +1939,10 @@ lbGradient.Parent = lbPanel
 
 make("TextLabel", {
 	Name = "LBTitle", Position = UDim2.new(0, 16, 0, 14),
-	Size = UDim2.new(1, -56, 0, 28), BackgroundTransparency = 1,
-	Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 220, 120),
+	Size = UDim2.new(1, -56, 0, 26), BackgroundTransparency = 1,
+	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(245, 230, 170),
 	TextXAlignment = Enum.TextXAlignment.Left,
-	TextSize = 18, Text = "TOP PLAYERS", ZIndex = 91, Parent = lbPanel,
+	TextSize = 16, Text = "Top Players", ZIndex = 91, Parent = lbPanel,
 })
 make("TextLabel", {
 	Name = "LBSubtitle", Position = UDim2.new(0, 16, 0, 38),
@@ -2113,11 +2113,11 @@ lbCloseBtn.MouseButton1Click:Connect(function() toggleLeaderboard(false) end)
 -- mobile without crowding the lobby.
 local lbButton = make("TextButton", {
 	Name = "LBButton", AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -16, 0, 58), Size = UDim2.new(0, 180, 0, 40),
+	Position = UDim2.new(1, -16, 0, 58), Size = UDim2.new(0, 170, 0, 38),
 	BackgroundColor3 = Color3.fromRGB(28, 30, 50), AutoButtonColor = true,
-	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 220, 120),
-	TextSize = 14, Text = "🏆  TOP PLAYERS", ZIndex = 18, Parent = hud,
-}, { corner(12), stroke(1, Color3.fromRGB(255, 220, 120)) })
+	Font = Enum.Font.GothamMedium, TextColor3 = Color3.fromRGB(245, 230, 170),
+	TextSize = 13, Text = "🏆  Top Players", ZIndex = 18, Parent = hud,
+}, { corner(10), stroke(1, Color3.fromRGB(140, 130, 90)) })
 lbButton.MouseButton1Click:Connect(function()
 	if state.inMatch then return end
 	toggleLeaderboard()

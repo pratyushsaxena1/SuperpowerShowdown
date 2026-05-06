@@ -13,189 +13,118 @@ local TweenService = game:GetService("TweenService")
 local SkinCatalog = {}
 
 SkinCatalog.DEFAULT_COLOR = Color3.fromRGB(248, 217, 109)
-SkinCatalog.Order = { "Fire", "Ice", "Neon", "Gold", "Shadow", "Plasma" }
+SkinCatalog.Order = { "Fire", "Ice", "Neon", "Gold" }
 
 local FIRE_TEX    = "rbxasset://textures/particles/fire_main.dds"
 local SMOKE_TEX   = "rbxasset://textures/particles/smoke_main.dds"
 local SPARKLE_TEX = "rbxasset://textures/particles/sparkles_main.dds"
 
+-- Skin design philosophy:
+--   * Body color is muted/themed, not a saturated glow blob — the
+--     character's silhouette stays readable as a Roblox character.
+--   * Highlight is OUTLINE-ONLY (FillTransparency = 1) so the body
+--     shape reads instead of being swallowed by a fill color.
+--   * Each skin has ONE signature element (crown OR foot bursts OR
+--     halo), not all of them at once.
+--   * Trail + PointLight provide the "vibe" without overpowering.
 SkinCatalog.Skins = {
 	Fire = {
 		name = "Fire",
 		price = 25,
 		coinPrice = 5000,
-		description = "Living inferno. Bright crimson armor that burns with a flame crown and ember trails.",
+		description = "Burning warrior. Smoldering body with a flame crown and ember footsteps.",
 		accentColor = Color3.fromRGB(255, 130, 60),
-		bodyColor = Color3.fromRGB(255, 95, 40),
-		material = Enum.Material.Neon,
+		bodyColor = Color3.fromRGB(120, 36, 20),
+		material = Enum.Material.SmoothPlastic,
 		reflectance = 0,
-		lightColor = Color3.fromRGB(255, 130, 50),
-		lightBrightness = 3,
+		lightColor = Color3.fromRGB(255, 140, 60),
+		lightBrightness = 2.4,
 		lightRange = 14,
+		highlightOutline = Color3.fromRGB(255, 180, 80),
+		highlightFillTransparency = 1, -- outline only
+		highlightFill = Color3.fromRGB(255, 100, 40),
+		trailColorA = Color3.fromRGB(255, 220, 100),
+		trailColorB = Color3.fromRGB(180, 40, 10),
+		trailLifetime = 0.55,
+		crownTexture = FIRE_TEX,
+		crownRate = 60,
+		crownColor = Color3.fromRGB(255, 170, 50),
+		crownSize = 2.4,
+		footParticleRate = 18,
 		particleColor = Color3.fromRGB(255, 160, 60),
 		particleTexture = FIRE_TEX,
-		particleRate = 35,
-		limbParticleRate = 25,
-		footParticleRate = 30,
-		highlightFill = Color3.fromRGB(255, 100, 40),
-		highlightOutline = Color3.fromRGB(255, 230, 120),
-		highlightFillTransparency = 0.55,
-		trailColorA = Color3.fromRGB(255, 230, 80),
-		trailColorB = Color3.fromRGB(255, 60, 0),
-		trailLifetime = 0.7,
-		crownTexture = FIRE_TEX,
-		crownRate = 80,
-		crownColor = Color3.fromRGB(255, 170, 50),
-		crownSize = 3,
-		ringColor = Color3.fromRGB(255, 110, 30),
 	},
 	Ice = {
 		name = "Ice",
 		price = 25,
 		coinPrice = 5000,
-		description = "Glacial sovereign. Crystal-clear ice armor with a frost halo and a glittering mist.",
+		description = "Glacial sovereign. Frosted crystalline body with a glittering frost halo.",
 		accentColor = Color3.fromRGB(150, 230, 255),
-		bodyColor = Color3.fromRGB(170, 230, 255),
+		bodyColor = Color3.fromRGB(180, 220, 240),
 		material = Enum.Material.Glass,
-		reflectance = 0.6,
+		reflectance = 0.4,
 		lightColor = Color3.fromRGB(180, 230, 255),
-		lightBrightness = 2.5,
+		lightBrightness = 2.0,
 		lightRange = 14,
-		particleColor = Color3.fromRGB(230, 245, 255),
-		particleTexture = SPARKLE_TEX,
-		particleRate = 30,
-		limbParticleRate = 22,
-		footParticleRate = 26,
+		highlightOutline = Color3.fromRGB(230, 245, 255),
+		highlightFillTransparency = 1,
 		highlightFill = Color3.fromRGB(180, 230, 255),
-		highlightOutline = Color3.fromRGB(255, 255, 255),
-		highlightFillTransparency = 0.55,
 		trailColorA = Color3.fromRGB(255, 255, 255),
-		trailColorB = Color3.fromRGB(120, 200, 255),
-		trailLifetime = 0.8,
+		trailColorB = Color3.fromRGB(140, 210, 255),
+		trailLifetime = 0.65,
 		crownTexture = SPARKLE_TEX,
-		crownRate = 70,
-		crownColor = Color3.fromRGB(230, 245, 255),
-		crownSize = 2.6,
-		ringColor = Color3.fromRGB(160, 225, 255),
+		crownRate = 50,
+		crownColor = Color3.fromRGB(220, 240, 255),
+		crownSize = 2.0,
+		-- No body / hand / foot emitters: Ice should feel quiet and clean.
 	},
 	Neon = {
 		name = "Neon",
 		price = 25,
 		coinPrice = 5000,
-		description = "Holographic strike-suit. Refracting violet hologram with electric pulses and arc trails.",
-		accentColor = Color3.fromRGB(225, 90, 255),
-		bodyColor = Color3.fromRGB(220, 80, 255),
-		material = Enum.Material.ForceField,
+		description = "Holographic strike-suit. Dark cyber armor outlined in pulsing magenta light.",
+		accentColor = Color3.fromRGB(240, 100, 255),
+		bodyColor = Color3.fromRGB(34, 18, 50),
+		material = Enum.Material.SmoothPlastic,
 		reflectance = 0,
-		lightColor = Color3.fromRGB(230, 100, 255),
-		lightBrightness = 3.5,
+		lightColor = Color3.fromRGB(240, 100, 255),
+		lightBrightness = 3.0,
 		lightRange = 14,
-		particleColor = Color3.fromRGB(240, 150, 255),
-		particleTexture = SPARKLE_TEX,
-		particleRate = 35,
-		limbParticleRate = 28,
-		footParticleRate = 32,
+		highlightOutline = Color3.fromRGB(245, 130, 255),
+		highlightFillTransparency = 1,
 		highlightFill = Color3.fromRGB(220, 80, 255),
-		highlightOutline = Color3.fromRGB(255, 220, 255),
-		highlightFillTransparency = 0.4,
-		trailColorA = Color3.fromRGB(255, 150, 255),
-		trailColorB = Color3.fromRGB(80, 30, 255),
-		trailLifetime = 0.9,
+		trailColorA = Color3.fromRGB(255, 180, 255),
+		trailColorB = Color3.fromRGB(80, 30, 200),
+		trailLifetime = 0.7,
 		crownTexture = SPARKLE_TEX,
-		crownRate = 90,
+		crownRate = 70,
 		crownColor = Color3.fromRGB(240, 120, 255),
-		crownSize = 2.9,
-		ringColor = Color3.fromRGB(225, 90, 255),
+		crownSize = 2.2,
 		pulseLight = true,
 	},
 	Gold = {
 		name = "Gold",
 		price = 25,
 		coinPrice = 5000,
-		description = "Champion of legends. Polished molten gold armor with a divine halo and shimmering radiance.",
+		description = "Champion of legends. Polished gold armor with a divine spinning halo.",
 		accentColor = Color3.fromRGB(255, 220, 100),
-		bodyColor = Color3.fromRGB(255, 200, 50),
+		bodyColor = Color3.fromRGB(230, 180, 50),
 		material = Enum.Material.Foil,
 		reflectance = 0.85,
 		lightColor = Color3.fromRGB(255, 220, 120),
-		lightBrightness = 3,
+		lightBrightness = 2.6,
 		lightRange = 14,
-		particleColor = Color3.fromRGB(255, 235, 140),
-		particleTexture = SPARKLE_TEX,
-		particleRate = 32,
-		limbParticleRate = 25,
-		footParticleRate = 28,
+		highlightOutline = Color3.fromRGB(255, 240, 180),
+		highlightFillTransparency = 1,
 		highlightFill = Color3.fromRGB(255, 210, 60),
-		highlightOutline = Color3.fromRGB(255, 255, 220),
-		highlightFillTransparency = 0.5,
 		trailColorA = Color3.fromRGB(255, 250, 180),
-		trailColorB = Color3.fromRGB(255, 170, 0),
-		trailLifetime = 0.7,
+		trailColorB = Color3.fromRGB(220, 150, 0),
+		trailLifetime = 0.55,
 		crownTexture = SPARKLE_TEX,
-		crownRate = 80,
+		crownRate = 60,
 		crownColor = Color3.fromRGB(255, 230, 120),
-		crownSize = 3.2,
-		ringColor = Color3.fromRGB(255, 210, 70),
+		crownSize = 2.4,
 		halo = true,
-	},
-	Shadow = {
-		name = "Shadow",
-		price = 25,
-		coinPrice = 5000,
-		description = "Phantom assassin. Inky black armor wreathed in violet smoke that swallows the light.",
-		accentColor = Color3.fromRGB(170, 90, 255),
-		bodyColor = Color3.fromRGB(28, 16, 42),
-		material = Enum.Material.SmoothPlastic,
-		reflectance = 0,
-		lightColor = Color3.fromRGB(170, 80, 255),
-		lightBrightness = 2.2,
-		lightRange = 12,
-		particleColor = Color3.fromRGB(150, 80, 230),
-		particleTexture = SMOKE_TEX,
-		particleRate = 30,
-		limbParticleRate = 22,
-		footParticleRate = 28,
-		highlightFill = Color3.fromRGB(40, 22, 60),
-		highlightOutline = Color3.fromRGB(190, 110, 255),
-		highlightFillTransparency = 0.3,
-		trailColorA = Color3.fromRGB(190, 110, 255),
-		trailColorB = Color3.fromRGB(20, 8, 30),
-		trailLifetime = 0.9,
-		crownTexture = SMOKE_TEX,
-		crownRate = 70,
-		crownColor = Color3.fromRGB(150, 80, 220),
-		crownSize = 3,
-		ringColor = Color3.fromRGB(170, 90, 255),
-	},
-	Plasma = {
-		name = "Plasma",
-		price = 25,
-		coinPrice = 5000,
-		description = "Living current. Ionized cyan plasma sheath crackling with electric arcs.",
-		accentColor = Color3.fromRGB(120, 240, 255),
-		bodyColor = Color3.fromRGB(140, 230, 255),
-		material = Enum.Material.ForceField,
-		reflectance = 0.2,
-		lightColor = Color3.fromRGB(140, 230, 255),
-		lightBrightness = 3.6,
-		lightRange = 14,
-		particleColor = Color3.fromRGB(220, 250, 255),
-		particleTexture = SPARKLE_TEX,
-		particleRate = 38,
-		limbParticleRate = 30,
-		footParticleRate = 32,
-		highlightFill = Color3.fromRGB(140, 230, 255),
-		highlightOutline = Color3.fromRGB(255, 255, 255),
-		highlightFillTransparency = 0.5,
-		trailColorA = Color3.fromRGB(255, 255, 255),
-		trailColorB = Color3.fromRGB(50, 130, 255),
-		trailLifetime = 0.8,
-		crownTexture = SPARKLE_TEX,
-		crownRate = 110,
-		crownColor = Color3.fromRGB(200, 245, 255),
-		crownSize = 2.7,
-		ringColor = Color3.fromRGB(120, 240, 255),
-		pulseLight = true,
 	},
 }
 
@@ -350,14 +279,17 @@ function SkinCatalog.apply(character, skinName)
 		end)
 	end
 
-	-- Subtle body emitter — small, slow, low rate so the character isn't
-	-- swallowed by particle smoke.
-	local mainAttach = Instance.new("Attachment")
-	mainAttach.Name = "SkinParticles"
-	mainAttach.Position = Vector3.new(0, 0, 0)
-	mainAttach.Parent = hrp
-	local mainEmitter = newEmitter(def, def.particleRate, 0.4, 0.9, 0.6, 0.1, 80)
-	mainEmitter.Parent = mainAttach
+	-- Optional body emitter. Most skins skip this — uniform body particle
+	-- smoke flattens the silhouette into a "blob". Set particleRate > 0
+	-- to opt in.
+	if def.particleRate and def.particleRate > 0 then
+		local mainAttach = Instance.new("Attachment")
+		mainAttach.Name = "SkinParticles"
+		mainAttach.Position = Vector3.new(0, 0, 0)
+		mainAttach.Parent = hrp
+		local mainEmitter = newEmitter(def, def.particleRate, 0.4, 0.9, 0.6, 0.1, 80)
+		mainEmitter.Parent = mainAttach
+	end
 
 	-- Motion trail: short, only appears while moving.
 	local trailTop = Instance.new("Attachment")
@@ -437,33 +369,36 @@ function SkinCatalog.apply(character, skinName)
 		end
 	end
 
-	-- Hand auras: subtle particles when swinging.
-	for _, partName in ipairs(AURA_PARTS) do
-		local part = character:FindFirstChild(partName)
-		if part and part:IsA("BasePart") then
-			local attach = Instance.new("Attachment")
-			attach.Name = "SkinAura"
-			attach.Parent = part
-			local e = newEmitter(def, def.limbParticleRate or def.particleRate,
-				0.25, 0.6, 0.7, 0.1, 100)
-			e.Parent = attach
+	-- Optional hand auras. Set limbParticleRate > 0 to opt in.
+	if def.limbParticleRate and def.limbParticleRate > 0 then
+		for _, partName in ipairs(AURA_PARTS) do
+			local part = character:FindFirstChild(partName)
+			if part and part:IsA("BasePart") then
+				local attach = Instance.new("Attachment")
+				attach.Name = "SkinAura"
+				attach.Parent = part
+				local e = newEmitter(def, def.limbParticleRate,
+					0.25, 0.6, 0.7, 0.1, 100)
+				e.Parent = attach
+			end
 		end
 	end
 
-	-- Foot bursts: small color emitter at each foot, gives the skin a
-	-- grounded "stepping in their element" feel as the player moves.
-	for _, partName in ipairs(FOOT_PARTS) do
-		local part = character:FindFirstChild(partName)
-		if part and part:IsA("BasePart") then
-			local attach = Instance.new("Attachment")
-			attach.Name = "SkinFootAura"
-			attach.Position = Vector3.new(0, -0.6, 0)
-			attach.Parent = part
-			local e = newEmitter(def, def.footParticleRate or 25,
-				0.3, 0.7, 0.9, 0.1, 70)
-			e.Speed = NumberRange.new(1, 3)
-			e.Acceleration = Vector3.new(0, 3, 0)
-			e.Parent = attach
+	-- Optional foot bursts. Set footParticleRate > 0 to opt in.
+	if def.footParticleRate and def.footParticleRate > 0 then
+		for _, partName in ipairs(FOOT_PARTS) do
+			local part = character:FindFirstChild(partName)
+			if part and part:IsA("BasePart") then
+				local attach = Instance.new("Attachment")
+				attach.Name = "SkinFootAura"
+				attach.Position = Vector3.new(0, -0.6, 0)
+				attach.Parent = part
+				local e = newEmitter(def, def.footParticleRate,
+					0.3, 0.7, 0.9, 0.1, 70)
+				e.Speed = NumberRange.new(1, 3)
+				e.Acceleration = Vector3.new(0, 3, 0)
+				e.Parent = attach
+			end
 		end
 	end
 end

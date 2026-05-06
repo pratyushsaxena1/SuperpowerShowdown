@@ -65,9 +65,9 @@ local function attachNametag(character, player)
 	billboard.Parent = head
 
 	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(1, 0, 0.42, 0)
+	nameLabel.Size = UDim2.new(1, 0, 0.46, 0)
 	nameLabel.BackgroundTransparency = 1
-	nameLabel.Font = Enum.Font.GothamBold
+	nameLabel.Font = Enum.Font.GothamMedium
 	nameLabel.TextScaled = true
 	nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 	nameLabel.TextStrokeTransparency = 0.4
@@ -77,12 +77,14 @@ local function attachNametag(character, player)
 
 	local rankLabel = Instance.new("TextLabel")
 	rankLabel.Name = "RankLabel"
-	rankLabel.Position = UDim2.new(0, 0, 0.42, 0)
-	rankLabel.Size = UDim2.new(1, 0, 0.32, 0)
+	rankLabel.Position = UDim2.new(0, 0, 0.46, 0)
+	rankLabel.Size = UDim2.new(1, 0, 0.28, 0)
 	rankLabel.BackgroundTransparency = 1
-	rankLabel.Font = Enum.Font.GothamBlack
+	-- GothamMedium instead of GothamBlack so the tier name doesn't visually
+	-- overpower the player's display name above it.
+	rankLabel.Font = Enum.Font.GothamBold
 	rankLabel.TextScaled = true
-	rankLabel.TextStrokeTransparency = 0.3
+	rankLabel.TextStrokeTransparency = 0.4
 	rankLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	rankLabel.Text = ""
 	rankLabel.Parent = billboard
@@ -94,7 +96,7 @@ local function attachNametag(character, player)
 	eloLabel.BackgroundTransparency = 1
 	eloLabel.Font = Enum.Font.Gotham
 	eloLabel.TextScaled = true
-	eloLabel.TextColor3 = Color3.fromRGB(220, 220, 240)
+	eloLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
 	eloLabel.TextStrokeTransparency = 0.4
 	eloLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 	eloLabel.Text = "Elo " .. (player:GetAttribute("Elo") or GameConfig.DefaultElo)
@@ -103,7 +105,7 @@ local function attachNametag(character, player)
 	-- Initial rank fill.
 	local elo = player:GetAttribute("Elo") or GameConfig.DefaultElo
 	local tier = Ranks.fromElo(elo)
-	rankLabel.Text = string.upper(tier.name)
+	rankLabel.Text = tier.name
 	rankLabel.TextColor3 = tier.accent
 
 	-- Visibility: shown only in the lobby (no InMatch attribute on the
@@ -130,7 +132,7 @@ local function updateNametag(player)
 	local tier = Ranks.fromElo(elo)
 	local rankLabel = tag:FindFirstChild("RankLabel")
 	if rankLabel then
-		rankLabel.Text = string.upper(tier.name)
+		rankLabel.Text = tier.name
 		rankLabel.TextColor3 = tier.accent
 	end
 	local eloLabel = tag:FindFirstChild("EloLabel")
