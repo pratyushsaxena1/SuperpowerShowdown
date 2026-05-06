@@ -1264,7 +1264,7 @@ local function buildStore(snapshot)
 		Position = UDim2.new(1, -20, 0, 24), Size = UDim2.new(0, 32, 0, 32),
 		BackgroundColor3 = Color3.fromRGB(28, 28, 42), AutoButtonColor = true,
 		Font = Enum.Font.GothamMedium, TextColor3 = Color3.fromRGB(220, 220, 230),
-		TextSize = 18, Text = "✕", ZIndex = 93, Parent = card,
+		TextSize = 18, Text = "X", ZIndex = 93, Parent = card,
 	}, { corner(8), stroke(1, Color3.fromRGB(80, 80, 110)) })
 	closeBtn.MouseButton1Click:Connect(closeStore)
 
@@ -1281,7 +1281,8 @@ local function buildStore(snapshot)
 	}, {
 		make("UIListLayout", {
 			FillDirection = Enum.FillDirection.Horizontal,
-			Padding = UDim.new(0, 4),
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			Padding = UDim.new(0, 8),
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
 	})
@@ -1711,15 +1712,14 @@ end)
 -- Bottom-left lobby cluster: Store button on top of the coin balance chip.
 -- Both share the rank/leaderboard panels' navy + yellow-accent treatment
 -- so the lobby HUD reads as one cohesive design system.
--- Single right-side column (rank → leaderboard btn → store → coins).
--- Y positions are: rank panel ends at 214, lbButton 222–264, store
--- 272–314, coins 322–354. Width 300 matches the rank panel above.
+-- Single tight right-side column. Width 280, gaps 6px, right margin 12.
+-- Rank ends at 194, lbButton 200–238, store 244–282, coins 288–318.
 local storeButton = make("TextButton", {
 	Name = "StoreButton", AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -16, 0, 272), Size = UDim2.new(0, 300, 0, 42),
+	Position = UDim2.new(1, -12, 0, 244), Size = UDim2.new(0, 280, 0, 38),
 	BackgroundColor3 = Color3.fromRGB(46, 48, 72), AutoButtonColor = true,
 	Font = Enum.Font.GothamMedium, TextColor3 = Color3.fromRGB(245, 245, 250),
-	TextSize = 15, Text = "Store", ZIndex = 20, Parent = hud,
+	TextSize = 14, Text = "Store", ZIndex = 20, Parent = hud,
 }, { corner(10), stroke(1, Color3.fromRGB(90, 90, 120)) })
 storeButton.MouseButton1Click:Connect(function()
 	if state.inMatch then return end
@@ -1727,11 +1727,9 @@ storeButton.MouseButton1Click:Connect(function()
 	if snap then buildStore(snap) end
 end)
 
--- Coins chip sits directly under the Store button as the bottom row of
--- the right-side column. Same width (300) so the column reads as one.
 local coinsChip = make("Frame", {
 	Name = "CoinsChip", AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -16, 0, 322), Size = UDim2.new(0, 300, 0, 32),
+	Position = UDim2.new(1, -12, 0, 288), Size = UDim2.new(0, 280, 0, 30),
 	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.05,
 	BorderSizePixel = 0, ZIndex = 20, Parent = hud,
 }, { corner(10), stroke(1, Color3.fromRGB(70, 70, 95)) })
@@ -1780,7 +1778,7 @@ player:GetAttributeChangedSignal("Coins"):Connect(updateCoinsChip)
 -- the next tier, stats row (W / L / Win-Rate / Streak / Best).
 local rankPanel = make("Frame", {
 	Name = "RankPanel", AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -16, 0, 58), Size = UDim2.new(0, 300, 0, 156),
+	Position = UDim2.new(1, -12, 0, 50), Size = UDim2.new(0, 280, 0, 144),
 	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.05,
 	BorderSizePixel = 0, ZIndex = 18, Parent = hud,
 }, { corner(12), stroke(1, Color3.fromRGB(70, 70, 95)) })
@@ -1841,7 +1839,7 @@ make("Frame", {
 -- Stats strip. Five evenly-spaced columns. Numbers are 22pt and prominent;
 -- labels underneath are 9pt, all-caps, dim — quickly scannable.
 local STATS_Y = 92
-local STATS_W = 272 -- panel width (300) - 14*2 padding
+local STATS_W = 252 -- panel width (280) - 14*2 padding
 local STATS_X0 = 14
 local function statColumn(idx, label, color, valueText)
 	local x = STATS_X0 + math.floor((idx - 1) * STATS_W / 5)
@@ -1966,13 +1964,12 @@ end)
 -- Leaderboard panel docks to the right edge so it never blocks the center
 -- of the screen. Same dark-navy + yellow-accent treatment as the rank
 -- panel below it for visual cohesion.
--- Panel docks to the LEFT of the right-side column (column right edge
--- is at x=screen-16, column width 300, +8px gap, so panel right edge
--- at x=screen-16-300-8 = screen-324). Vertical aligns with the rank
--- panel's top so the two read as siblings.
+-- Docks 8px to the LEFT of the cluster column. Column is 280 wide with
+-- 12px right margin, so panel right edge sits at screen-12-280-8 = 300.
+-- Top aligns with the rank panel (y=50) so they read as siblings.
 local lbPanel = make("Frame", {
 	Name = "Leaderboard", AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -324, 0, 58), Size = UDim2.new(0, 320, 0, 360),
+	Position = UDim2.new(1, -300, 0, 50), Size = UDim2.new(0, 320, 0, 340),
 	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.05,
 	BorderSizePixel = 0, Visible = false, ZIndex = 90, Parent = hud,
 }, { corner(12), stroke(1, Color3.fromRGB(70, 70, 95)) })
@@ -2004,7 +2001,7 @@ make("TextLabel", {
 local lbCloseBtn = make("TextButton", {
 	Name = "LBClose", AnchorPoint = Vector2.new(1, 0),
 	Position = UDim2.new(1, -12, 0, 12), Size = UDim2.new(0, 32, 0, 32),
-	BackgroundColor3 = Color3.fromRGB(40, 42, 60), Text = "✕",
+	BackgroundColor3 = Color3.fromRGB(40, 42, 60), Text = "X",
 	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(220, 220, 240),
 	TextSize = 16, ZIndex = 92, Parent = lbPanel,
 }, { corner(8) })
@@ -2159,11 +2156,9 @@ lbCloseBtn.MouseButton1Click:Connect(function() toggleLeaderboard(false) end)
 -- Leaderboard button: docked to the top-right corner so it lives next to
 -- the panel it opens. Compact size + trophy glyph keeps it readable on
 -- mobile without crowding the lobby.
--- Same flat treatment as the Store button. No emoji (renders
--- unreliably across platforms) and no yellow tint (caused glow).
 local lbButton = make("TextButton", {
 	Name = "LBButton", AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -16, 0, 222), Size = UDim2.new(0, 300, 0, 42),
+	Position = UDim2.new(1, -12, 0, 200), Size = UDim2.new(0, 280, 0, 38),
 	BackgroundColor3 = Color3.fromRGB(46, 48, 72), AutoButtonColor = true,
 	Font = Enum.Font.GothamMedium, TextColor3 = Color3.fromRGB(245, 245, 250),
 	TextSize = 14, Text = "Top Players", ZIndex = 18, Parent = hud,
