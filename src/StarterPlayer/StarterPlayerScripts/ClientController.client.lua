@@ -273,17 +273,17 @@ local function openAbilitySelect(info)
 	-- like part of the same product, not a separate UI era.
 	make("TextLabel", {
 		Name = "Title",
-		Size = UDim2.new(1, -260, 0, 36), Position = UDim2.new(0, 28, 0, 22),
-		BackgroundTransparency = 1, Font = Enum.Font.GothamMedium,
-		TextColor3 = Color3.fromRGB(245, 245, 250), TextSize = 26,
-		Text = "Choose your power", TextXAlignment = Enum.TextXAlignment.Left,
+		Size = UDim2.new(0, 480, 0, 32), Position = UDim2.new(0, 28, 0, 20),
+		BackgroundTransparency = 1, Font = Enum.Font.GothamBlack,
+		TextColor3 = Color3.fromRGB(255, 230, 120), TextSize = 24,
+		Text = "CHOOSE YOUR POWER", TextXAlignment = Enum.TextXAlignment.Left,
 		ZIndex = 82, Parent = card,
 	})
 	make("TextLabel", {
-		Size = UDim2.new(1, -260, 0, 16), Position = UDim2.new(0, 28, 0, 60),
+		Size = UDim2.new(0, 480, 0, 16), Position = UDim2.new(0, 28, 0, 56),
 		BackgroundTransparency = 1, Font = Enum.Font.Gotham,
 		TextColor3 = Color3.fromRGB(170, 170, 190), TextSize = 12,
-		Text = "Click an ability — random pick if no choice in time.",
+		Text = "Click any ability — auto-picks if you wait too long.",
 		TextXAlignment = Enum.TextXAlignment.Left,
 		ZIndex = 82, Parent = card,
 	})
@@ -1639,71 +1639,92 @@ OpenStoreEvent.OnClientEvent:Connect(function(snap)
 	buildStore(snap)
 end)
 
--- Persistent "Store" button in the bottom-left lobby corner. Hidden during
--- active matches so it doesn't clutter the combat HUD. Coin balance is
--- shown beneath the button as a small chip so the player always sees what
--- they have without opening the store.
+-- Bottom-left lobby cluster: Store button on top of the coin balance chip.
+-- Both share the rank/leaderboard panels' navy + yellow-accent treatment
+-- so the lobby HUD reads as one cohesive design system.
 local storeButton = make("TextButton", {
 	Name = "StoreButton", AnchorPoint = Vector2.new(0, 1),
-	Position = UDim2.new(0, 16, 1, -52), Size = UDim2.new(0, 130, 0, 36),
-	BackgroundColor3 = Color3.fromRGB(255, 220, 110), AutoButtonColor = true,
-	Font = Enum.Font.GothamMedium, TextColor3 = Color3.fromRGB(28, 28, 38),
-	TextSize = 15, Text = "Store", ZIndex = 20, Parent = hud,
-}, { corner(8) })
+	Position = UDim2.new(0, 16, 1, -56), Size = UDim2.new(0, 180, 0, 40),
+	BackgroundColor3 = Color3.fromRGB(28, 30, 50), AutoButtonColor = true,
+	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 220, 120),
+	TextSize = 14, Text = "STORE", ZIndex = 20, Parent = hud,
+}, { corner(12), stroke(1, Color3.fromRGB(255, 220, 120)) })
 storeButton.MouseButton1Click:Connect(function()
 	if state.inMatch then return end
 	local snap = refreshStore()
 	if snap then buildStore(snap) end
 end)
 
-local coinsChip = make("TextLabel", {
+local coinsChip = make("Frame", {
 	Name = "CoinsChip", AnchorPoint = Vector2.new(0, 1),
-	Position = UDim2.new(0, 16, 1, -14), Size = UDim2.new(0, 130, 0, 26),
-	BackgroundColor3 = Color3.fromRGB(24, 24, 36), BackgroundTransparency = 0.15,
-	Font = Enum.Font.Gotham, TextColor3 = Color3.fromRGB(255, 220, 110),
-	TextXAlignment = Enum.TextXAlignment.Center,
-	TextSize = 13, Text = "0 Coins", ZIndex = 20, Parent = hud,
-}, { corner(6) })
+	Position = UDim2.new(0, 16, 1, -12), Size = UDim2.new(0, 180, 0, 32),
+	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.05,
+	BorderSizePixel = 0, ZIndex = 20, Parent = hud,
+}, { corner(10), stroke(1, Color3.fromRGB(70, 70, 95)) })
+make("TextLabel", {
+	Name = "CoinIcon", Position = UDim2.new(0, 10, 0, 0),
+	Size = UDim2.new(0, 20, 1, 0), BackgroundTransparency = 1,
+	Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 220, 120),
+	TextXAlignment = Enum.TextXAlignment.Left, TextSize = 14,
+	Text = "◆", ZIndex = 21, Parent = coinsChip,
+})
+local coinsLabel = make("TextLabel", {
+	Name = "CoinsLabel", Position = UDim2.new(0, 32, 0, 0),
+	Size = UDim2.new(1, -42, 1, 0), BackgroundTransparency = 1,
+	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 220, 120),
+	TextXAlignment = Enum.TextXAlignment.Left, TextSize = 14,
+	Text = "0", ZIndex = 21, Parent = coinsChip,
+})
 
 local function updateCoinsChip()
-	coinsChip.Text = formatCoins(player:GetAttribute("Coins") or 0) .. "  Coins"
+	coinsLabel.Text = formatCoins(player:GetAttribute("Coins") or 0) .. " Coins"
 end
 updateCoinsChip()
 player:GetAttributeChangedSignal("Coins"):Connect(updateCoinsChip)
 
 -- ----- Lobby Rank+Stats panel (top-left) -------------------------------------
--- Hidden during a match so it doesn't compete with the combat HUD. Three
--- sections stacked: tier line + Elo, progress bar to the next tier,
--- compact stats row (W / L / Win-Rate / Streak / Best).
+-- Hidden during a match. Three rows: tier line + Elo, progress bar to the
+-- next tier, stats row (W / L / Win-Rate / Streak / Best).
 -- Y=58 keeps it under the Roblox topbar (chat/leaderstats icons live in 0..36).
+-- Width 300 + height 156 gives the stats row room to breathe at TextSize 22.
 local rankPanel = make("Frame", {
 	Name = "RankPanel", AnchorPoint = Vector2.new(0, 0),
-	Position = UDim2.new(0, 16, 0, 58), Size = UDim2.new(0, 280, 0, 130),
-	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.1,
+	Position = UDim2.new(0, 16, 0, 58), Size = UDim2.new(0, 300, 0, 156),
+	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.05,
 	BorderSizePixel = 0, ZIndex = 18, Parent = hud,
-}, { corner(10), stroke(1, Color3.fromRGB(80, 80, 100)) })
+}, { corner(12), stroke(1, Color3.fromRGB(70, 70, 95)) })
+
+-- Subtle vertical gradient: dark navy → slightly lighter at top so the
+-- panel reads as raised instead of flat. Same trick the picker cards use.
+local rankGradient = Instance.new("UIGradient")
+rankGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(34, 36, 56)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 22, 36)),
+})
+rankGradient.Rotation = 90
+rankGradient.Parent = rankPanel
 
 local rankTierLbl = make("TextLabel", {
 	Name = "Tier", AnchorPoint = Vector2.new(0, 0),
-	Position = UDim2.new(0, 12, 0, 8), Size = UDim2.new(1, -110, 0, 32),
+	Position = UDim2.new(0, 14, 0, 10), Size = UDim2.new(1, -120, 0, 30),
 	BackgroundTransparency = 1, Font = Enum.Font.GothamBlack,
 	TextColor3 = Color3.fromRGB(220, 150, 90),
-	TextXAlignment = Enum.TextXAlignment.Left, TextSize = 24,
+	TextXAlignment = Enum.TextXAlignment.Left, TextSize = 22,
 	Text = "BRONZE", ZIndex = 19, Parent = rankPanel,
 })
 local rankEloLbl = make("TextLabel", {
 	Name = "Elo", AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -12, 0, 10), Size = UDim2.new(0, 100, 0, 28),
-	BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
-	TextColor3 = Color3.fromRGB(245, 245, 250),
-	TextXAlignment = Enum.TextXAlignment.Right, TextSize = 20,
+	Position = UDim2.new(1, -14, 0, 12), Size = UDim2.new(0, 110, 0, 26),
+	BackgroundTransparency = 1, Font = Enum.Font.GothamMedium,
+	TextColor3 = Color3.fromRGB(220, 220, 240),
+	TextXAlignment = Enum.TextXAlignment.Right, TextSize = 16,
 	Text = "Elo 0", ZIndex = 19, Parent = rankPanel,
 })
 
--- Progress bar: 8px tall, fills toward the next tier. Top tier sits at 100%.
+-- Progress bar.
 local progressBg = make("Frame", {
-	Name = "ProgressBg", Position = UDim2.new(0, 12, 0, 46),
-	Size = UDim2.new(1, -24, 0, 8), BackgroundColor3 = Color3.fromRGB(40, 42, 60),
+	Name = "ProgressBg", Position = UDim2.new(0, 14, 0, 50),
+	Size = UDim2.new(1, -28, 0, 8), BackgroundColor3 = Color3.fromRGB(36, 38, 58),
 	BorderSizePixel = 0, ZIndex = 19, Parent = rankPanel,
 }, { corner(4) })
 local progressFill = make("Frame", {
@@ -1712,39 +1733,53 @@ local progressFill = make("Frame", {
 	ZIndex = 20, Parent = progressBg,
 }, { corner(4) })
 local progressTextLbl = make("TextLabel", {
-	Name = "ProgressText", Position = UDim2.new(0, 12, 0, 56),
-	Size = UDim2.new(1, -24, 0, 16), BackgroundTransparency = 1,
-	Font = Enum.Font.Gotham, TextColor3 = Color3.fromRGB(180, 180, 200),
+	Name = "ProgressText", Position = UDim2.new(0, 14, 0, 60),
+	Size = UDim2.new(1, -28, 0, 14), BackgroundTransparency = 1,
+	Font = Enum.Font.Gotham, TextColor3 = Color3.fromRGB(150, 150, 175),
 	TextXAlignment = Enum.TextXAlignment.Left, TextSize = 11,
 	Text = "Progress to next tier", ZIndex = 19, Parent = rankPanel,
 })
 
--- Stats strip. Five compact columns laid out by hand so the labels and
--- numbers always align even on narrow viewports.
-local function statColumn(label, color, x)
+-- Divider line between progress bar and stats row.
+make("Frame", {
+	Position = UDim2.new(0, 14, 0, 84), Size = UDim2.new(1, -28, 0, 1),
+	BackgroundColor3 = Color3.fromRGB(60, 62, 86), BorderSizePixel = 0,
+	BackgroundTransparency = 0.4, ZIndex = 19, Parent = rankPanel,
+})
+
+-- Stats strip. Five evenly-spaced columns. Numbers are 22pt and prominent;
+-- labels underneath are 9pt, all-caps, dim — quickly scannable.
+local STATS_Y = 92
+local STATS_W = 272 -- panel width (300) - 14*2 padding
+local STATS_X0 = 14
+local function statColumn(idx, label, color, valueText)
+	local x = STATS_X0 + math.floor((idx - 1) * STATS_W / 5)
+	local w = math.floor(STATS_W / 5)
 	local col = make("Frame", {
-		Position = UDim2.new(0, x, 0, 78),
-		Size = UDim2.new(0, 50, 0, 44), BackgroundTransparency = 1,
+		Position = UDim2.new(0, x, 0, STATS_Y),
+		Size = UDim2.new(0, w, 0, 50), BackgroundTransparency = 1,
 		ZIndex = 19, Parent = rankPanel,
 	})
-	make("TextLabel", {
-		Size = UDim2.new(1, 0, 0, 16), BackgroundTransparency = 1,
-		Font = Enum.Font.Gotham, TextColor3 = Color3.fromRGB(170, 170, 195),
-		TextSize = 11, Text = label, ZIndex = 19, Parent = col,
-	})
 	local v = make("TextLabel", {
-		Position = UDim2.new(0, 0, 0, 16), Size = UDim2.new(1, 0, 0, 26),
+		Position = UDim2.new(0, 0, 0, 0), Size = UDim2.new(1, 0, 0, 28),
 		BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
-		TextColor3 = color, TextSize = 18, Text = "0",
+		TextColor3 = color, TextSize = 22, Text = valueText or "0",
+		ZIndex = 19, Parent = col,
+	})
+	make("TextLabel", {
+		Position = UDim2.new(0, 0, 0, 30), Size = UDim2.new(1, 0, 0, 14),
+		BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
+		TextColor3 = Color3.fromRGB(140, 140, 165),
+		TextSize = 9, Text = label,
 		ZIndex = 19, Parent = col,
 	})
 	return v
 end
-local winsValLbl   = statColumn("WINS",   Color3.fromRGB(120, 235, 150), 12)
-local lossesValLbl = statColumn("LOSSES", Color3.fromRGB(235, 120, 120), 66)
-local winrateLbl   = statColumn("WIN %",  Color3.fromRGB(220, 220, 245), 120)
-local streakLbl    = statColumn("STREAK", Color3.fromRGB(255, 200, 110), 174)
-local bestLbl      = statColumn("BEST",   Color3.fromRGB(255, 220, 150), 228)
+local winsValLbl   = statColumn(1, "WINS",   Color3.fromRGB(120, 235, 150))
+local lossesValLbl = statColumn(2, "LOSSES", Color3.fromRGB(235, 120, 120))
+local winrateLbl   = statColumn(3, "WIN %",  Color3.fromRGB(230, 230, 250))
+local streakLbl    = statColumn(4, "STREAK", Color3.fromRGB(255, 200, 110))
+local bestLbl      = statColumn(5, "BEST",   Color3.fromRGB(255, 220, 150))
 
 local function refreshRankPanel()
 	local elo = player:GetAttribute("Elo") or GameConfig.DefaultElo
@@ -1833,10 +1868,228 @@ Remotes.BonusGranted.OnClientEvent:Connect(function(payload)
 	end)
 end)
 
--- Single source of truth for lobby HUD visibility. Used by both selection
--- (hide before the picker opens) and match start/end. Without this helper,
--- the rank panel + leaderboard button stay on screen while the player is
--- mid-pick, competing with the picker for attention.
+-- ----- Top-10 server leaderboard ---------------------------------------------
+-- Hidden by default; open via the trophy button (lobby only) or TAB key
+-- on PC. Re-fetches each open so the snapshot is fresh — the data set is
+-- tiny (max 10 rows) so the round-trip is negligible.
+-- Leaderboard panel docks to the right edge so it never blocks the center
+-- of the screen. Same dark-navy + yellow-accent treatment as the rank
+-- panel below it for visual cohesion.
+local lbPanel = make("Frame", {
+	Name = "Leaderboard", AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -16, 0, 58), Size = UDim2.new(0, 340, 0, 440),
+	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.05,
+	BorderSizePixel = 0, Visible = false, ZIndex = 90, Parent = hud,
+}, { corner(12), stroke(1, Color3.fromRGB(70, 70, 95)) })
+
+local lbGradient = Instance.new("UIGradient")
+lbGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(34, 36, 56)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 22, 36)),
+})
+lbGradient.Rotation = 90
+lbGradient.Parent = lbPanel
+
+make("TextLabel", {
+	Name = "LBTitle", Position = UDim2.new(0, 16, 0, 14),
+	Size = UDim2.new(1, -56, 0, 28), BackgroundTransparency = 1,
+	Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 220, 120),
+	TextXAlignment = Enum.TextXAlignment.Left,
+	TextSize = 18, Text = "TOP PLAYERS", ZIndex = 91, Parent = lbPanel,
+})
+make("TextLabel", {
+	Name = "LBSubtitle", Position = UDim2.new(0, 16, 0, 38),
+	Size = UDim2.new(1, -56, 0, 16), BackgroundTransparency = 1,
+	Font = Enum.Font.Gotham, TextColor3 = Color3.fromRGB(150, 150, 175),
+	TextXAlignment = Enum.TextXAlignment.Left,
+	TextSize = 11, Text = "Live ranking on this server",
+	ZIndex = 91, Parent = lbPanel,
+})
+
+local lbCloseBtn = make("TextButton", {
+	Name = "LBClose", AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -12, 0, 12), Size = UDim2.new(0, 32, 0, 32),
+	BackgroundColor3 = Color3.fromRGB(40, 42, 60), Text = "✕",
+	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(220, 220, 240),
+	TextSize = 16, ZIndex = 92, Parent = lbPanel,
+}, { corner(8) })
+
+-- Header row pinned just above the list so column meanings are visible
+-- without taking a row from the list.
+local lbHeader = make("Frame", {
+	Name = "LBHeader", Position = UDim2.new(0, 12, 0, 64),
+	Size = UDim2.new(1, -24, 0, 22), BackgroundTransparency = 1,
+	ZIndex = 91, Parent = lbPanel,
+})
+make("TextLabel", {
+	Position = UDim2.new(0, 8, 0, 0), Size = UDim2.new(0, 28, 1, 0),
+	BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
+	TextColor3 = Color3.fromRGB(140, 140, 165),
+	TextXAlignment = Enum.TextXAlignment.Left, TextSize = 10,
+	Text = "#", ZIndex = 92, Parent = lbHeader,
+})
+make("TextLabel", {
+	Position = UDim2.new(0, 44, 0, 0), Size = UDim2.new(1, -180, 1, 0),
+	BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
+	TextColor3 = Color3.fromRGB(140, 140, 165),
+	TextXAlignment = Enum.TextXAlignment.Left, TextSize = 10,
+	Text = "PLAYER", ZIndex = 92, Parent = lbHeader,
+})
+make("TextLabel", {
+	AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -68, 0, 0), Size = UDim2.new(0, 70, 1, 0),
+	BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
+	TextColor3 = Color3.fromRGB(140, 140, 165),
+	TextXAlignment = Enum.TextXAlignment.Right, TextSize = 10,
+	Text = "TIER", ZIndex = 92, Parent = lbHeader,
+})
+make("TextLabel", {
+	AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -8, 0, 0), Size = UDim2.new(0, 50, 1, 0),
+	BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
+	TextColor3 = Color3.fromRGB(140, 140, 165),
+	TextXAlignment = Enum.TextXAlignment.Right, TextSize = 10,
+	Text = "ELO", ZIndex = 92, Parent = lbHeader,
+})
+
+local lbList = make("Frame", {
+	Name = "LBList", Position = UDim2.new(0, 12, 0, 88),
+	Size = UDim2.new(1, -24, 1, -100), BackgroundTransparency = 1,
+	ZIndex = 91, Parent = lbPanel,
+}, {
+	make("UIListLayout", {
+		FillDirection = Enum.FillDirection.Vertical,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, 4),
+	}),
+})
+local lbLayout = make("UIListLayout", {
+	FillDirection = Enum.FillDirection.Vertical,
+	Padding = UDim.new(0, 4),
+	SortOrder = Enum.SortOrder.LayoutOrder,
+})
+lbLayout.Parent = lbList
+
+local function refreshLeaderboard()
+	-- Clear existing rows.
+	for _, child in ipairs(lbList:GetChildren()) do
+		if child:IsA("Frame") or child:IsA("TextLabel") then child:Destroy() end
+	end
+	local ok, list = pcall(function() return Remotes.GetTopPlayers:InvokeServer() end)
+	if not ok or type(list) ~= "table" or #list == 0 then
+		local empty = make("Frame", {
+			Position = UDim2.new(0, 0, 0, 80),
+			Size = UDim2.new(1, 0, 0, 80), BackgroundTransparency = 1,
+			ZIndex = 91, Parent = lbList,
+		})
+		make("TextLabel", {
+			Size = UDim2.new(1, 0, 0, 28), BackgroundTransparency = 1,
+			Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(220, 220, 240),
+			TextSize = 16, Text = "Be the first to climb",
+			ZIndex = 91, Parent = empty,
+		})
+		make("TextLabel", {
+			Position = UDim2.new(0, 0, 0, 32),
+			Size = UDim2.new(1, 0, 0, 18), BackgroundTransparency = 1,
+			Font = Enum.Font.Gotham, TextColor3 = Color3.fromRGB(150, 150, 175),
+			TextSize = 11, Text = "Step on a duel pad to start ranking up.",
+			ZIndex = 91, Parent = empty,
+		})
+		return
+	end
+	for i, e in ipairs(list) do
+		local tier = Ranks.fromElo(e.elo)
+		local rankColor =
+			(i == 1) and Color3.fromRGB(255, 215, 60)
+			or (i == 2) and Color3.fromRGB(220, 220, 220)
+			or (i == 3) and Color3.fromRGB(220, 150, 90)
+			or Color3.fromRGB(160, 160, 180)
+		local row = make("Frame", {
+			Name = "LBRow_" .. i, Size = UDim2.new(1, 0, 0, 32),
+			-- Top 3 get a faint accent gradient stripe along the left edge;
+			-- everyone else uses a flat dark fill so the eye finds the
+			-- podium positions without scanning numbers.
+			BackgroundColor3 = (i <= 3) and Color3.fromRGB(40, 42, 64) or Color3.fromRGB(26, 28, 44),
+			BorderSizePixel = 0, LayoutOrder = i, ZIndex = 91, Parent = lbList,
+		}, { corner(6) })
+		if i <= 3 then
+			make("Frame", {
+				Position = UDim2.new(0, 0, 0, 0), Size = UDim2.new(0, 3, 1, 0),
+				BackgroundColor3 = rankColor, BorderSizePixel = 0,
+				ZIndex = 92, Parent = row,
+			})
+		end
+		make("TextLabel", {
+			Position = UDim2.new(0, 8, 0, 0), Size = UDim2.new(0, 32, 1, 0),
+			BackgroundTransparency = 1, Font = Enum.Font.GothamBlack,
+			TextColor3 = rankColor,
+			TextXAlignment = Enum.TextXAlignment.Left, TextSize = 14,
+			Text = "#" .. i, ZIndex = 92, Parent = row,
+		})
+		make("TextLabel", {
+			Position = UDim2.new(0, 44, 0, 0), Size = UDim2.new(1, -180, 1, 0),
+			BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
+			TextColor3 = Color3.fromRGB(245, 245, 250),
+			TextXAlignment = Enum.TextXAlignment.Left, TextSize = 14,
+			Text = e.name, TextTruncate = Enum.TextTruncate.AtEnd,
+			ZIndex = 92, Parent = row,
+		})
+		make("TextLabel", {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, -68, 0, 0), Size = UDim2.new(0, 70, 1, 0),
+			BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
+			TextColor3 = tier.accent,
+			TextXAlignment = Enum.TextXAlignment.Right, TextSize = 11,
+			Text = string.upper(tier.name), ZIndex = 92, Parent = row,
+		})
+		make("TextLabel", {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, -8, 0, 0), Size = UDim2.new(0, 50, 1, 0),
+			BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
+			TextColor3 = Color3.fromRGB(220, 220, 240),
+			TextXAlignment = Enum.TextXAlignment.Right, TextSize = 14,
+			Text = tostring(e.elo), ZIndex = 92, Parent = row,
+		})
+	end
+end
+
+local function toggleLeaderboard(forceVisible)
+	local target = forceVisible
+	if target == nil then target = not lbPanel.Visible end
+	if target and not lbPanel.Visible then refreshLeaderboard() end
+	lbPanel.Visible = target
+end
+lbCloseBtn.MouseButton1Click:Connect(function() toggleLeaderboard(false) end)
+
+-- Leaderboard button: visually pairs with the rank panel above it (same
+-- width, same corner radius, navy fill with a yellow stroke instead of a
+-- saturated yellow blob).
+local lbButton = make("TextButton", {
+	Name = "LBButton", AnchorPoint = Vector2.new(0, 0),
+	Position = UDim2.new(0, 16, 0, 222), Size = UDim2.new(0, 300, 0, 38),
+	BackgroundColor3 = Color3.fromRGB(28, 30, 50), AutoButtonColor = true,
+	Font = Enum.Font.GothamMedium, TextColor3 = Color3.fromRGB(255, 220, 120),
+	TextSize = 14, Text = "TOP PLAYERS", ZIndex = 18, Parent = hud,
+}, { corner(12), stroke(1, Color3.fromRGB(255, 220, 120)) })
+lbButton.MouseButton1Click:Connect(function()
+	if state.inMatch then return end
+	toggleLeaderboard()
+end)
+
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed then return end
+	if input.KeyCode == Enum.KeyCode.Tab then
+		if state.inMatch then return end
+		toggleLeaderboard()
+	end
+end)
+
+-- Single source of truth for lobby HUD visibility. Defined AFTER all lobby
+-- elements (rankPanel, lbButton, lbPanel, storeButton, coinsChip) so the
+-- function's upvalues resolve to the right local variables. (When this
+-- helper sat above the leaderboard panel definitions, lbButton resolved
+-- to a global = nil, the assignment errored, and the leaderboard button
+-- stayed visible during fights.)
 local function setLobbyHudVisible(visible)
 	storeButton.Visible = visible
 	coinsChip.Visible = visible
@@ -1859,135 +2112,6 @@ Remotes.MatchEnded.OnClientEvent:Connect(function()
 	task.delay(GameConfig.PostMatchDuration + 0.5, function()
 		setLobbyHudVisible(true)
 	end)
-end)
-
--- ----- Top-10 server leaderboard ---------------------------------------------
--- Hidden by default; open via the trophy button (lobby only) or TAB key
--- on PC. Re-fetches each open so the snapshot is fresh — the data set is
--- tiny (max 10 rows) so the round-trip is negligible.
--- Leaderboard panel docks to the right edge so it never blocks the center
--- of the screen (where pads and the player's character live). Slides in
--- when toggled.
-local lbPanel = make("Frame", {
-	Name = "Leaderboard", AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -16, 0, 58), Size = UDim2.new(0, 360, 0, 480),
-	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.05,
-	BorderSizePixel = 0, Visible = false, ZIndex = 90, Parent = hud,
-}, { corner(12), stroke(2, Color3.fromRGB(255, 220, 120)) })
-
-make("TextLabel", {
-	Name = "LBTitle", Position = UDim2.new(0, 0, 0, 12),
-	Size = UDim2.new(1, 0, 0, 36), BackgroundTransparency = 1,
-	Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 220, 120),
-	TextSize = 24, Text = "🏆  TOP PLAYERS", ZIndex = 91, Parent = lbPanel,
-})
-local lbCloseBtn = make("TextButton", {
-	Name = "LBClose", AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -8, 0, 8), Size = UDim2.new(0, 32, 0, 32),
-	BackgroundColor3 = Color3.fromRGB(50, 52, 70), Text = "✕",
-	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(220, 220, 240),
-	TextSize = 18, ZIndex = 92, Parent = lbPanel,
-}, { corner(6) })
-
-local lbList = make("Frame", {
-	Name = "LBList", Position = UDim2.new(0, 12, 0, 56),
-	Size = UDim2.new(1, -24, 1, -68), BackgroundTransparency = 1,
-	ZIndex = 91, Parent = lbPanel,
-})
-local lbLayout = make("UIListLayout", {
-	FillDirection = Enum.FillDirection.Vertical,
-	Padding = UDim.new(0, 4),
-	SortOrder = Enum.SortOrder.LayoutOrder,
-})
-lbLayout.Parent = lbList
-
-local function refreshLeaderboard()
-	-- Clear existing rows.
-	for _, child in ipairs(lbList:GetChildren()) do
-		if child:IsA("Frame") or child:IsA("TextLabel") then child:Destroy() end
-	end
-	local ok, list = pcall(function() return Remotes.GetTopPlayers:InvokeServer() end)
-	if not ok or type(list) ~= "table" or #list == 0 then
-		make("TextLabel", {
-			Size = UDim2.new(1, 0, 0, 36), BackgroundTransparency = 1,
-			Font = Enum.Font.Gotham, TextColor3 = Color3.fromRGB(180, 180, 200),
-			TextSize = 14, Text = "No players yet — be the first to fight!",
-			ZIndex = 91, Parent = lbList,
-		})
-		return
-	end
-	for i, e in ipairs(list) do
-		local tier = Ranks.fromElo(e.elo)
-		local row = make("Frame", {
-			Name = "LBRow_" .. i, Size = UDim2.new(1, 0, 0, 34),
-			BackgroundColor3 = (i <= 3) and Color3.fromRGB(50, 54, 84) or Color3.fromRGB(28, 30, 48),
-			BorderSizePixel = 0, LayoutOrder = i, ZIndex = 91, Parent = lbList,
-		}, { corner(6) })
-		make("TextLabel", {
-			Position = UDim2.new(0, 8, 0, 0), Size = UDim2.new(0, 36, 1, 0),
-			BackgroundTransparency = 1, Font = Enum.Font.GothamBlack,
-			TextColor3 = (i == 1) and Color3.fromRGB(255, 215, 60)
-				or (i == 2) and Color3.fromRGB(220, 220, 220)
-				or (i == 3) and Color3.fromRGB(220, 150, 90)
-				or Color3.fromRGB(160, 160, 180),
-			TextXAlignment = Enum.TextXAlignment.Left, TextSize = 18,
-			Text = "#" .. i, ZIndex = 92, Parent = row,
-		})
-		make("TextLabel", {
-			Position = UDim2.new(0, 50, 0, 0), Size = UDim2.new(1, -160, 1, 0),
-			BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
-			TextColor3 = Color3.fromRGB(245, 245, 250),
-			TextXAlignment = Enum.TextXAlignment.Left, TextSize = 16,
-			Text = e.name, TextTruncate = Enum.TextTruncate.AtEnd,
-			ZIndex = 92, Parent = row,
-		})
-		make("TextLabel", {
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, -78, 0, 0), Size = UDim2.new(0, 78, 1, 0),
-			BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
-			TextColor3 = tier.accent,
-			TextXAlignment = Enum.TextXAlignment.Right, TextSize = 13,
-			Text = string.upper(tier.name), ZIndex = 92, Parent = row,
-		})
-		make("TextLabel", {
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, -8, 0, 0), Size = UDim2.new(0, 60, 1, 0),
-			BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
-			TextColor3 = Color3.fromRGB(220, 220, 240),
-			TextXAlignment = Enum.TextXAlignment.Right, TextSize = 16,
-			Text = tostring(e.elo), ZIndex = 92, Parent = row,
-		})
-	end
-end
-
-local function toggleLeaderboard(forceVisible)
-	local target = forceVisible
-	if target == nil then target = not lbPanel.Visible end
-	if target and not lbPanel.Visible then refreshLeaderboard() end
-	lbPanel.Visible = target
-end
-lbCloseBtn.MouseButton1Click:Connect(function() toggleLeaderboard(false) end)
-
--- Compact trophy button below the rank panel; keeps a thumb-friendly tap
--- target on mobile and visually pairs with the rank tier.
-local lbButton = make("TextButton", {
-	Name = "LBButton", AnchorPoint = Vector2.new(0, 0),
-	Position = UDim2.new(0, 16, 0, 196), Size = UDim2.new(0, 130, 0, 36),
-	BackgroundColor3 = Color3.fromRGB(255, 220, 110), AutoButtonColor = true,
-	Font = Enum.Font.GothamMedium, TextColor3 = Color3.fromRGB(28, 28, 38),
-	TextSize = 14, Text = "🏆 Leaderboard", ZIndex = 18, Parent = hud,
-}, { corner(8) })
-lbButton.MouseButton1Click:Connect(function()
-	if state.inMatch then return end
-	toggleLeaderboard()
-end)
-
-UserInputService.InputBegan:Connect(function(input, processed)
-	if processed then return end
-	if input.KeyCode == Enum.KeyCode.Tab then
-		if state.inMatch then return end
-		toggleLeaderboard()
-	end
 end)
 
 -- Server-wide notifications. Today's only sender is the streak milestone
