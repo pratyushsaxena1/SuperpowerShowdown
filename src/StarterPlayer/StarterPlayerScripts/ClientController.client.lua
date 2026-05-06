@@ -1213,16 +1213,24 @@ local function buildStore(snapshot)
 	})
 	cardGuard.MouseButton1Click:Connect(function() end)
 
+	-- Title and subtitle centered horizontally in the modal so the
+	-- Roblox topbar's chat/menu icons (top-left CoreGui, can't be
+	-- z-ordered below our gui) don't block the words. Both stack
+	-- centered as a hero header.
 	make("TextLabel", {
-		Name = "Title", Size = UDim2.new(0, 320, 0, 30), Position = UDim2.new(0, 24, 0, 18),
+		Name = "Title", AnchorPoint = Vector2.new(0.5, 0),
+		Size = UDim2.new(0, 320, 0, 30), Position = UDim2.new(0.5, 0, 0, 18),
 		BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
-		TextColor3 = Color3.fromRGB(245, 230, 170), TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Color3.fromRGB(245, 230, 170),
+		TextXAlignment = Enum.TextXAlignment.Center,
 		TextSize = 22, Text = "Store", ZIndex = 92, Parent = card,
 	})
 	make("TextLabel", {
-		Name = "Subtitle", Size = UDim2.new(0, 420, 0, 16), Position = UDim2.new(0, 24, 0, 48),
+		Name = "Subtitle", AnchorPoint = Vector2.new(0.5, 0),
+		Size = UDim2.new(0, 460, 0, 16), Position = UDim2.new(0.5, 0, 0, 48),
 		BackgroundTransparency = 1, Font = Enum.Font.Gotham,
-		TextColor3 = Color3.fromRGB(150, 150, 175), TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Color3.fromRGB(150, 150, 175),
+		TextXAlignment = Enum.TextXAlignment.Center,
 		TextSize = 12, Text = "Skins, kill effects, finishing moves, and coin packs.",
 		ZIndex = 92, Parent = card,
 	})
@@ -1958,11 +1966,13 @@ end)
 -- Leaderboard panel docks to the right edge so it never blocks the center
 -- of the screen. Same dark-navy + yellow-accent treatment as the rank
 -- panel below it for visual cohesion.
--- Panel docks below the entire right-side column (coins ends at y=354).
--- Same 300 width so the column stays consistent.
+-- Panel docks to the LEFT of the right-side column (column right edge
+-- is at x=screen-16, column width 300, +8px gap, so panel right edge
+-- at x=screen-16-300-8 = screen-324). Vertical aligns with the rank
+-- panel's top so the two read as siblings.
 local lbPanel = make("Frame", {
 	Name = "Leaderboard", AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -16, 0, 362), Size = UDim2.new(0, 300, 0, 320),
+	Position = UDim2.new(1, -324, 0, 58), Size = UDim2.new(0, 320, 0, 360),
 	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.05,
 	BorderSizePixel = 0, Visible = false, ZIndex = 90, Parent = hud,
 }, { corner(12), stroke(1, Color3.fromRGB(70, 70, 95)) })
