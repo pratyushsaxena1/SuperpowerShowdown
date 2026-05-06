@@ -258,9 +258,12 @@ local function openAbilitySelect(info)
 		BorderSizePixel = 0, ZIndex = 80, Parent = hud,
 	})
 
+	-- Card is 1280 wide so a 6-column grid (6 * 192 + 5 * 10 = 1202 cells)
+	-- fits cleanly with breathing room either side. Height stays at 540 —
+	-- 12 abilities = 6×2, no orphaned third row.
 	local card = make("Frame", {
 		Name = "Card", AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(0.5, 0, 0.5, 0), Size = UDim2.new(0, 1060, 0, 540),
+		Position = UDim2.new(0.5, 0, 0.5, 0), Size = UDim2.new(0, 1280, 0, 540),
 		BackgroundColor3 = Color3.fromRGB(18, 18, 28), BackgroundTransparency = 0.05,
 		BorderSizePixel = 0, ZIndex = 81, Parent = selectionGui,
 	}, { corner(14), stroke(1, Color3.fromRGB(80, 80, 110)) })
@@ -331,7 +334,7 @@ local function openAbilitySelect(info)
 		make("UIGridLayout", {
 			CellSize = UDim2.new(0, 192, 0, 196),
 			CellPadding = UDim2.new(0, 10, 0, 10),
-			FillDirectionMaxCells = 5,
+			FillDirectionMaxCells = 6,
 			HorizontalAlignment = Enum.HorizontalAlignment.Center,
 			VerticalAlignment = Enum.VerticalAlignment.Center,
 			SortOrder = Enum.SortOrder.LayoutOrder,
@@ -682,10 +685,38 @@ local function flashRed()
 	end)
 end
 
+-- Camera shake. Adds a per-frame additive offset to the live camera CFrame
+-- and decays back to zero over `duration` seconds. Plays on damage taken
+-- AND on landing a punch — both events should feel physical. Decoupled
+-- from the red-flash so we can tune them independently.
+local _shakeAmount, _shakeDecay = 0, 0
+local function addShake(magnitude, duration)
+	_shakeAmount = math.max(_shakeAmount, magnitude)
+	_shakeDecay = magnitude / math.max(0.05, duration)
+end
+local _camera = workspace.CurrentCamera
+RunService.RenderStepped:Connect(function(dt)
+	if _shakeAmount > 0 and _camera then
+		local off = Vector3.new(
+			(math.random() - 0.5) * _shakeAmount,
+			(math.random() - 0.5) * _shakeAmount,
+			0
+		)
+		_camera.CFrame = _camera.CFrame * CFrame.new(off)
+		_shakeAmount = math.max(0, _shakeAmount - _shakeDecay * dt)
+	end
+end)
+
 Remotes.HealthUpdate.OnClientEvent:Connect(function(payload)
 	if payload.target == "self" then
 		if lastSelfHealth and payload.health < lastSelfHealth - 0.1 then
 			flashRed()
+			-- Bigger drops shake harder. 30+ damage → big shake, 8 dmg
+			-- punches → small shake. Capped so SuperStrength's 30 dmg
+			-- crate throws don't spin the camera.
+			local drop = lastSelfHealth - payload.health
+			local mag = math.clamp(0.25 + drop * 0.025, 0.3, 1.2)
+			addShake(mag, 0.35)
 		end
 		lastSelfHealth = payload.health
 	end
@@ -838,6 +869,9 @@ Remotes.AbilityEffect.OnClientEvent:Connect(function(payload)
 			end
 			if payload.from and payload.from == player.Character then
 				showHitMarker()
+				-- Tiny camera kick on landed hit. Subtle (0.18 mag) so
+				-- it reads as feedback, not a screen wobble.
+				addShake(0.18, 0.15)
 			end
 		end
 	end
@@ -1079,18 +1113,24 @@ local function setupSkinViewport(parent, skinName, accent)
 		Parent = parent,
 	}, { corner(8), stroke(2, accent) })
 
+	-- Backdrop gradient: hot accent color at the top fading to a dim
+	-- neutral at the bottom. Old version went to near-black, which made
+	-- the character's feet disappear into the lower half of the card.
 	local gradient = Instance.new("UIGradient")
 	gradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, accent:Lerp(Color3.fromRGB(255, 255, 255), 0.35)),
-		ColorSequenceKeypoint.new(0.6, accent:Lerp(Color3.fromRGB(40, 40, 60), 0.5)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 30)),
+		ColorSequenceKeypoint.new(0, accent:Lerp(Color3.fromRGB(255, 255, 255), 0.30)),
+		ColorSequenceKeypoint.new(0.55, accent:Lerp(Color3.fromRGB(40, 40, 60), 0.55)),
+		ColorSequenceKeypoint.new(1, accent:Lerp(Color3.fromRGB(40, 40, 60), 0.85)),
 	})
 	gradient.Rotation = 90
 	gradient.Parent = viewport
 
+	-- Camera sits at slight 3/4 angle in front of the character so faces
+	-- and details on both shoulders read. Y=1 gives a faint downward tilt
+	-- that flatters R15 proportions; previous Y=-0.4 looked bottom-up.
 	local cam = Instance.new("Camera")
-	cam.FieldOfView = 35
-	cam.CFrame = CFrame.lookAt(Vector3.new(0, -0.4, 11), Vector3.new(0, -0.4, 0))
+	cam.FieldOfView = 30
+	cam.CFrame = CFrame.lookAt(Vector3.new(2.5, 1.2, -9.5), Vector3.new(0, -0.2, 0))
 	cam.Parent = viewport
 	viewport.CurrentCamera = cam
 
@@ -1373,8 +1413,11 @@ local function buildStore(snapshot)
 
 		setupSkinViewport(cell, item.name, accent)
 
+		-- Title and description now sit in the 60px between the viewport
+		-- bottom (y=180) and the action button strip (y=264 for unowned,
+		-- y=300 for owned). Old layout had ~110px of dead space here.
 		make("TextLabel", {
-			Size = UDim2.new(1, -16, 0, 22), Position = UDim2.new(0, 8, 0, 188),
+			Size = UDim2.new(1, -16, 0, 22), Position = UDim2.new(0, 8, 0, 184),
 			BackgroundTransparency = 1, Font = Enum.Font.GothamMedium,
 			TextColor3 = Color3.fromRGB(245, 245, 250), TextSize = 16,
 			TextXAlignment = Enum.TextXAlignment.Left,
@@ -1382,7 +1425,7 @@ local function buildStore(snapshot)
 		})
 
 		make("TextLabel", {
-			Size = UDim2.new(1, -16, 0, 60), Position = UDim2.new(0, 8, 0, 212),
+			Size = UDim2.new(1, -16, 0, 50), Position = UDim2.new(0, 8, 0, 208),
 			BackgroundTransparency = 1, Font = Enum.Font.Gotham, TextWrapped = true,
 			TextColor3 = Color3.fromRGB(170, 170, 190), TextSize = 11,
 			TextYAlignment = Enum.TextYAlignment.Top,
@@ -1442,7 +1485,31 @@ local function buildStore(snapshot)
 	end
 
 	local function renderSkins()
-		local grid = makeGridHolder(UDim2.new(0, 224, 0, 460), 4, 12)
+		-- Skins live inside a ScrollingFrame because there are now 6+ of
+		-- them and a 2-row grid no longer fits the content area. The card
+		-- height was tightened from 460 → 340 to remove the dead space
+		-- between the description and the action buttons.
+		local scroller = make("ScrollingFrame", {
+			Name = "SkinScroll", Size = UDim2.new(1, 0, 1, 0),
+			BackgroundTransparency = 1, BorderSizePixel = 0,
+			ScrollBarThickness = 6, ScrollBarImageColor3 = Color3.fromRGB(120, 120, 150),
+			CanvasSize = UDim2.new(0, 0, 0, 0),
+			AutomaticCanvasSize = Enum.AutomaticSize.Y,
+			ZIndex = 91, Parent = content,
+		})
+		local grid = make("Frame", {
+			Size = UDim2.new(1, -10, 0, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1, ZIndex = 91, Parent = scroller,
+		}, {
+			make("UIGridLayout", {
+				CellSize = UDim2.new(0, 224, 0, 340),
+				CellPadding = UDim2.new(0, 12, 0, 12),
+				FillDirectionMaxCells = 4,
+				HorizontalAlignment = Enum.HorizontalAlignment.Center,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+			}),
+		})
 		local data = current.skins or { items = {} }
 		for i, item in ipairs(data.items) do
 			buildSkinCell(grid, i, item)
@@ -1608,9 +1675,10 @@ player:GetAttributeChangedSignal("Coins"):Connect(updateCoinsChip)
 -- Hidden during a match so it doesn't compete with the combat HUD. Three
 -- sections stacked: tier line + Elo, progress bar to the next tier,
 -- compact stats row (W / L / Win-Rate / Streak / Best).
+-- Y=58 keeps it under the Roblox topbar (chat/leaderstats icons live in 0..36).
 local rankPanel = make("Frame", {
 	Name = "RankPanel", AnchorPoint = Vector2.new(0, 0),
-	Position = UDim2.new(0, 16, 0, 16), Size = UDim2.new(0, 280, 0, 130),
+	Position = UDim2.new(0, 16, 0, 58), Size = UDim2.new(0, 280, 0, 130),
 	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.1,
 	BorderSizePixel = 0, ZIndex = 18, Parent = hud,
 }, { corner(10), stroke(1, Color3.fromRGB(80, 80, 100)) })
@@ -1765,20 +1833,31 @@ Remotes.BonusGranted.OnClientEvent:Connect(function(payload)
 	end)
 end)
 
+-- Single source of truth for lobby HUD visibility. Used by both selection
+-- (hide before the picker opens) and match start/end. Without this helper,
+-- the rank panel + leaderboard button stay on screen while the player is
+-- mid-pick, competing with the picker for attention.
+local function setLobbyHudVisible(visible)
+	storeButton.Visible = visible
+	coinsChip.Visible = visible
+	rankPanel.Visible = visible
+	lbButton.Visible = visible
+	if not visible then
+		lbPanel.Visible = false
+	end
+end
+
+Remotes.ShowAbilitySelection.OnClientEvent:Connect(function()
+	setLobbyHudVisible(false)
+	closeStore()
+end)
 Remotes.MatchStarted.OnClientEvent:Connect(function()
-	storeButton.Visible = false
-	coinsChip.Visible = false
-	rankPanel.Visible = false
-	lbButton.Visible = false
-	lbPanel.Visible = false
+	setLobbyHudVisible(false)
 	closeStore()
 end)
 Remotes.MatchEnded.OnClientEvent:Connect(function()
 	task.delay(GameConfig.PostMatchDuration + 0.5, function()
-		storeButton.Visible = true
-		coinsChip.Visible = true
-		rankPanel.Visible = true
-		lbButton.Visible = true
+		setLobbyHudVisible(true)
 	end)
 end)
 
@@ -1786,9 +1865,12 @@ end)
 -- Hidden by default; open via the trophy button (lobby only) or TAB key
 -- on PC. Re-fetches each open so the snapshot is fresh — the data set is
 -- tiny (max 10 rows) so the round-trip is negligible.
+-- Leaderboard panel docks to the right edge so it never blocks the center
+-- of the screen (where pads and the player's character live). Slides in
+-- when toggled.
 local lbPanel = make("Frame", {
-	Name = "Leaderboard", AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.new(0.5, 0, 0.5, 0), Size = UDim2.new(0, 380, 0, 460),
+	Name = "Leaderboard", AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -16, 0, 58), Size = UDim2.new(0, 360, 0, 480),
 	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.05,
 	BorderSizePixel = 0, Visible = false, ZIndex = 90, Parent = hud,
 }, { corner(12), stroke(2, Color3.fromRGB(255, 220, 120)) })
@@ -1890,7 +1972,7 @@ lbCloseBtn.MouseButton1Click:Connect(function() toggleLeaderboard(false) end)
 -- target on mobile and visually pairs with the rank tier.
 local lbButton = make("TextButton", {
 	Name = "LBButton", AnchorPoint = Vector2.new(0, 0),
-	Position = UDim2.new(0, 16, 0, 152), Size = UDim2.new(0, 130, 0, 36),
+	Position = UDim2.new(0, 16, 0, 196), Size = UDim2.new(0, 130, 0, 36),
 	BackgroundColor3 = Color3.fromRGB(255, 220, 110), AutoButtonColor = true,
 	Font = Enum.Font.GothamMedium, TextColor3 = Color3.fromRGB(28, 28, 38),
 	TextSize = 14, Text = "🏆 Leaderboard", ZIndex = 18, Parent = hud,
