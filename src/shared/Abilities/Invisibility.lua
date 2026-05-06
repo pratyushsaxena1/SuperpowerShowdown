@@ -1,7 +1,7 @@
 local Invisibility = {}
 Invisibility.Name = "Invisibility"
 Invisibility.DisplayName = "Invisibility"
-Invisibility.Description = "Vanish for 4 seconds. Press E to disappear (you can still attack)."
+Invisibility.Description = "Vanish for 4s. Press E to disappear (you can still attack)."
 Invisibility.Cooldown = 10
 Invisibility.Color = Color3.fromRGB(180, 180, 200)
 Invisibility.PunchDamageMultiplier = 1.5
@@ -22,10 +22,16 @@ function Invisibility.onMatchStart(_state) end
 function Invisibility.activate(state)
 	local char = state.character
 	if not char then return end
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if root then
+		state.broadcastEffect("vanish", { pos = root.Position })
+	end
 	setTransparency(char, 0.95)
 	task.delay(4, function()
 		if state.character == char and char.Parent then
 			setTransparency(char, 0)
+			local r = char:FindFirstChild("HumanoidRootPart")
+			if r then state.broadcastEffect("vanish", { pos = r.Position }) end
 		end
 	end)
 end

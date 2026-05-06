@@ -13,11 +13,13 @@ function MatchService.new(deps)
 	self._elo = deps.elo
 	self._combat = deps.combat
 	self._pad = deps.pad
-	self._matches = {}                  -- [matchId] = match table
-	self._playerMatch = {}              -- [player] = matchId
-	self._abilityChoice = {}            -- [player] = ability name
-	self._abilityState = {}             -- [player] = state table
-	self._lastActivate = {}             -- [player] = tick()
+	self._effects = deps.effects
+	self._stats = deps.stats
+	self._matches = {}
+	self._playerMatch = {}
+	self._abilityChoice = {}
+	self._abilityState = {}
+	self._lastActivate = {}
 	self._matchCounter = 0
 
 	self._combat:SetOnDeath(function(loser, winner) self:_onDeath(loser, winner) end)
@@ -27,12 +29,6 @@ function MatchService.new(deps)
 	Remotes.PunchAttack.OnServerEvent:Connect(function(plr) self._combat:HandlePunch(plr) end)
 
 	return self
-end
-
-function MatchService:_clientStateUpdate(match, payload)
-	for _, p in ipairs({ match.a, match.b }) do
-		Remotes.MatchState:FireClient(p, payload)
-	end
 end
 
 local function teleportTo(player, position)
@@ -59,26 +55,41 @@ function MatchService:Start(a, b)
 	teleportTo(a, Config.ARENA_A_POS)
 	teleportTo(b, Config.ARENA_B_POS)
 
+	-- Face each other.
+	local function face(player, lookAt)
+		local char = player.Character
+		local root = char and char:FindFirstChild("HumanoidRootPart")
+		if root then
+			root.CFrame = CFrame.new(root.Position, Vector3.new(lookAt.X, root.Position.Y, lookAt.Z))
+		end
+	end
+	face(a, Config.ARENA_B_POS)
+	face(b, Config.ARENA_A_POS)
+
 	self._abilityChoice[a] = nil
 	self._abilityChoice[b] = nil
 
-	-- Freeze players until selection done
 	self:_freeze(a, true)
 	self:_freeze(b, true)
 
-	self:_clientStateUpdate(match, {
+	Remotes.MatchState:FireClient(a, {
 		phase = "selection",
-		opponentName = b.Name, -- overwritten per-player below
+		opponentName = b.Name,
+		opponentElo = self._elo:Get(b),
 		duration = Config.SELECTION_DURATION,
 	})
-	Remotes.MatchState:FireClient(a, { phase = "selection", opponentName = b.Name, duration = Config.SELECTION_DURATION })
-	Remotes.MatchState:FireClient(b, { phase = "selection", opponentName = a.Name, duration = Config.SELECTION_DURATION })
+	Remotes.MatchState:FireClient(b, {
+		phase = "selection",
+		opponentName = a.Name,
+		opponentElo = self._elo:Get(a),
+		duration = Config.SELECTION_DURATION,
+	})
 
 	task.delay(Config.SELECTION_DURATION, function()
 		if match.ended then return end
 		if not self._abilityChoice[a] then self._abilityChoice[a] = Config.ABILITIES[math.random(1, #Config.ABILITIES)] end
 		if not self._abilityChoice[b] then self._abilityChoice[b] = Config.ABILITIES[math.random(1, #Config.ABILITIES)] end
-		self:_beginFight(match)
+		self:_runIntro(match)
 	end)
 end
 
@@ -98,7 +109,34 @@ function MatchService:_buildAbilityState(player, abilityName)
 		player = player,
 		character = player.Character,
 		abilityName = abilityName,
-		requestSlam = function(p, origin, radius, dmg) self._combat:HandleSlam(p, origin, radius, dmg) end,
+
+		requestSlam = function(p, origin, radius, dmg)
+			self._combat:HandleSlam(p, origin, radius, dmg)
+		end,
+		requestProjectile = function(p, origin, dir, opts)
+			self._combat:FireProjectile(p, origin, dir, opts)
+		end,
+		requestFreeze = function(target, duration)
+			self._combat:Freeze(target, duration)
+		end,
+		requestDOT = function(target, source, perTick, ticks, interval)
+			self._combat:ApplyDOT(target, source, perTick, ticks, interval)
+		end,
+		requestLightning = function(p, dmg, range)
+			self._combat:Lightning(p, dmg, range)
+		end,
+		requestLift = function(attacker, target, duration, dmg)
+			self._combat:Lift(attacker, target, duration, dmg)
+		end,
+		requestDash = function(p, distance, dmg, opts)
+			self._combat:Dash(p, distance, dmg, opts)
+		end,
+		getOpponent = function(p)
+			return self._combat:GetOpponent(p)
+		end,
+		broadcastEffect = function(kind, data)
+			if self._effects then self._effects:Broadcast(kind, data) end
+		end,
 	}
 	self._abilityState[player] = state
 	if ability and ability.onMatchStart then ability.onMatchStart(state) end
@@ -110,25 +148,41 @@ function MatchService:_onAbilityChosen(player, name)
 	local match = self._matches[matchId]
 	if not match or match.ended then return end
 	if not table.find(Config.ABILITIES, name) then return end
-	if match.startTime then return end -- already past selection
+	if match.startTime then return end
 	self._abilityChoice[player] = name
+end
+
+function MatchService:_runIntro(match)
+	-- "Round 1!" → "FIGHT!" sequence on the clients.
+	for _, p in ipairs({ match.a, match.b }) do
+		Remotes.MatchState:FireClient(p, {
+			phase = "intro",
+			ability = self._abilityChoice[p],
+			opponentAbility = self._abilityChoice[(p == match.a) and match.b or match.a],
+		})
+	end
+	task.delay(2.0, function()
+		if match.ended then return end
+		self:_beginFight(match)
+	end)
 end
 
 function MatchService:_beginFight(match)
 	match.startTime = tick()
 	for _, p in ipairs({ match.a, match.b }) do
 		local choice = self._abilityChoice[p]
+		-- Unfreeze BEFORE onMatchStart so abilities like SuperSpeed can apply their walkspeed without being overwritten.
+		self:_freeze(p, false)
 		self:_buildAbilityState(p, choice)
 		self._combat:RegisterMatchPlayer(p, Abilities.get(choice))
-		self:_freeze(p, false)
 		Remotes.MatchState:FireClient(p, {
 			phase = "fight",
 			ability = choice,
 			opponentAbility = self._abilityChoice[(p == match.a) and match.b or match.a],
+			opponentName = ((p == match.a) and match.b or match.a).Name,
 			duration = Config.MATCH_DURATION,
 		})
 	end
-	-- Timer
 	task.delay(Config.MATCH_DURATION, function()
 		if match.ended then return end
 		self:_endByTimer(match)
@@ -140,6 +194,8 @@ function MatchService:_onActivate(player)
 	if not matchId then return end
 	local match = self._matches[matchId]
 	if not match or match.ended or not match.startTime then return end
+
+	if self._combat:IsFrozen(player) then return end
 
 	local state = self._abilityState[player]
 	if not state then return end
@@ -160,8 +216,15 @@ function MatchService:_onDeath(loser, winner)
 	if not matchId then return end
 	local match = self._matches[matchId]
 	if not match or match.ended then return end
+	-- KO announcement.
+	if self._effects then
+		local char = loser.Character
+		local root = char and char:FindFirstChild("HumanoidRootPart")
+		if root then
+			self._effects:Broadcast("ko", { pos = root.Position })
+		end
+	end
 	if winner == nil or winner == loser then
-		-- treat as draw safety
 		self:_finish(match, nil)
 	else
 		self:_finish(match, winner)
@@ -195,7 +258,18 @@ function MatchService:_finish(match, winner)
 		self._combat:UnregisterMatchPlayer(p)
 	end
 
+	-- Win streak bonus (added to the winner's elo delta only).
 	local newA, newB, dA, dB = self._elo:ApplyMatch(match.a, match.b, winner)
+
+	if self._stats then
+		for _, p in ipairs({ match.a, match.b }) do
+			local result
+			if winner == nil then result = "draw"
+			elseif winner == p then result = "win"
+			else result = "lose" end
+			self._stats:Record(p, result)
+		end
+	end
 
 	for _, p in ipairs({ match.a, match.b }) do
 		local newElo = (p == match.a) and newA or newB
@@ -205,11 +279,13 @@ function MatchService:_finish(match, winner)
 		if winner == nil then result = "draw"
 		elseif winner == p then result = "win"
 		else result = "lose" end
+		local streak = self._stats and self._stats:Get(p).streak or 0
 		Remotes.MatchState:FireClient(p, {
 			phase = "result",
 			result = result,
 			newElo = newElo,
 			delta = delta,
+			streak = streak,
 			duration = Config.LOBBY_RETURN_DELAY,
 		})
 	end

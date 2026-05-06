@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("Config"))
@@ -13,9 +14,9 @@ function PadService.new(eloService, onMatchReady)
 	self._onMatchReady = onMatchReady
 	self._padA = nil
 	self._padB = nil
-	self._holdersA = {}  -- [player] = enterTime
-	self._holdersB = {}  -- [player] = enterTime
-	self._busy = {}      -- [player] = true while in a match
+	self._holdersA = {}
+	self._holdersB = {}
+	self._busy = {}
 	return self
 end
 
@@ -29,18 +30,62 @@ function PadService:_makePad(name, position, color)
 	pad.Material = Enum.Material.Neon
 	pad.Parent = workspace
 
+	-- Glowing ring around the pad
+	local ring = Instance.new("Part")
+	ring.Name = "PadRing"
+	ring.Anchored = true
+	ring.Shape = Enum.PartType.Cylinder
+	ring.Size = Vector3.new(0.3, 12, 12)
+	ring.CFrame = CFrame.new(position - Vector3.new(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	ring.Color = color
+	ring.Material = Enum.Material.Neon
+	ring.Transparency = 0.2
+	ring.CanCollide = false
+	ring.Parent = pad
+
+	-- Pulse the ring
+	task.spawn(function()
+		while ring.Parent do
+			local t = TweenService:Create(ring, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+				Size = Vector3.new(0.3, 14, 14),
+				Transparency = 0.5,
+			})
+			t:Play()
+			t.Completed:Wait()
+		end
+	end)
+
+	-- Beam of light upward
+	local beam = Instance.new("Part")
+	beam.Name = "PadBeam"
+	beam.Anchored = true
+	beam.CanCollide = false
+	beam.Size = Vector3.new(7, 40, 7)
+	beam.Position = position + Vector3.new(0, 20, 0)
+	beam.Color = color
+	beam.Material = Enum.Material.Neon
+	beam.Transparency = 0.85
+	beam.Parent = pad
+
+	-- Light source
+	local light = Instance.new("PointLight")
+	light.Color = color
+	light.Brightness = 4
+	light.Range = 24
+	light.Parent = pad
+
 	local label = Instance.new("BillboardGui")
-	label.Size = UDim2.fromOffset(180, 50)
-	label.StudsOffset = Vector3.new(0, 4, 0)
+	label.Size = UDim2.fromOffset(220, 60)
+	label.StudsOffset = Vector3.new(0, 5, 0)
 	label.AlwaysOnTop = true
 	label.Parent = pad
 	local txt = Instance.new("TextLabel")
 	txt.Size = UDim2.fromScale(1, 1)
 	txt.BackgroundTransparency = 1
-	txt.Text = "Stand here\nto duel"
+	txt.Text = "STAND HERE\nTO QUEUE"
 	txt.TextColor3 = Color3.new(1, 1, 1)
 	txt.TextStrokeTransparency = 0
-	txt.Font = Enum.Font.GothamBold
+	txt.Font = Enum.Font.GothamBlack
 	txt.TextScaled = true
 	txt.Parent = label
 
@@ -48,8 +93,8 @@ function PadService:_makePad(name, position, color)
 end
 
 function PadService:Build()
-	self._padA = self:_makePad("PadA", Config.PAD_A_POS, Color3.fromRGB(120, 200, 255))
-	self._padB = self:_makePad("PadB", Config.PAD_B_POS, Color3.fromRGB(255, 140, 140))
+	self._padA = self:_makePad("PadA", Config.PAD_A_POS, Color3.fromRGB(80, 180, 255))
+	self._padB = self:_makePad("PadB", Config.PAD_B_POS, Color3.fromRGB(255, 100, 130))
 end
 
 function PadService:SetBusy(player, busy)
@@ -78,7 +123,6 @@ local function pickClosestElo(holders, eloService)
 	end
 	if #list < 2 then return nil end
 	table.sort(list, function(a, b) return a.elo < b.elo end)
-	-- pick the pair with the smallest gap
 	local bestI, bestGap = 1, math.huge
 	for i = 1, #list - 1 do
 		local gap = list[i + 1].elo - list[i].elo
@@ -108,7 +152,6 @@ function PadService:Start()
 			end
 		end
 
-		-- Build candidate pools (held >= PAD_HOLD_TIME)
 		local now = tick()
 		local readyA, readyB = {}, {}
 		for plr, t in pairs(self._holdersA) do
@@ -118,7 +161,6 @@ function PadService:Start()
 			if now - t >= Config.PAD_HOLD_TIME then readyB[plr] = true end
 		end
 
-		-- Cross-pad pairing first (one A holder + one B holder)
 		local hasA, hasB = next(readyA), next(readyB)
 		if hasA and hasB then
 			local a, b = nil, nil
@@ -130,7 +172,6 @@ function PadService:Start()
 				return
 			end
 		end
-		-- Same-pad fallback: closest-Elo pair on either pad
 		local a, b = pickClosestElo(readyA, self._elo)
 		if not a then a, b = pickClosestElo(readyB, self._elo) end
 		if a and b then

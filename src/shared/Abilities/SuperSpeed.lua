@@ -1,7 +1,7 @@
 local SuperSpeed = {}
 SuperSpeed.Name = "SuperSpeed"
 SuperSpeed.DisplayName = "Super Speed"
-SuperSpeed.Description = "Always move 2x faster. Press E for a 2-second sprint burst."
+SuperSpeed.Description = "Always 2x walkspeed. Press E for a 2-second sprint burst."
 SuperSpeed.Cooldown = 6
 SuperSpeed.Color = Color3.fromRGB(255, 230, 100)
 SuperSpeed.PunchDamageMultiplier = 1.0
@@ -20,7 +20,11 @@ function SuperSpeed.activate(state)
 	if not char then return end
 	local hum = char:FindFirstChildOfClass("Humanoid")
 	if not hum then return end
-	hum.WalkSpeed = 70
+	hum.WalkSpeed = 75
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if root then
+		state.broadcastEffect("sprintBurst", { pos = root.Position, duration = 2 })
+	end
 	task.delay(2, function()
 		if hum and hum.Parent then hum.WalkSpeed = BASE_BOOST end
 	end)
