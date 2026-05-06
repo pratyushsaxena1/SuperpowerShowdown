@@ -288,19 +288,20 @@ local function openAbilitySelect(info)
 	-- weight + lighter color used by the Store header so the modal looks
 	-- like part of the same product, not a separate UI era.
 	make("TextLabel", {
-		Name = "Title",
-		Size = UDim2.new(0, 480, 0, 30), Position = UDim2.new(0, 28, 0, 22),
+		Name = "Title", AnchorPoint = Vector2.new(0.5, 0),
+		Size = UDim2.new(0, 600, 0, 30), Position = UDim2.new(0.5, 0, 0, 22),
 		BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
 		TextColor3 = Color3.fromRGB(245, 230, 170), TextSize = 22,
-		Text = "Choose your power", TextXAlignment = Enum.TextXAlignment.Left,
+		Text = "Choose your power", TextXAlignment = Enum.TextXAlignment.Center,
 		ZIndex = 82, Parent = card,
 	})
 	make("TextLabel", {
-		Size = UDim2.new(0, 480, 0, 16), Position = UDim2.new(0, 28, 0, 56),
+		AnchorPoint = Vector2.new(0.5, 0),
+		Size = UDim2.new(0, 600, 0, 16), Position = UDim2.new(0.5, 0, 0, 56),
 		BackgroundTransparency = 1, Font = Enum.Font.Gotham,
 		TextColor3 = Color3.fromRGB(170, 170, 190), TextSize = 12,
 		Text = "Click any ability — auto-picks if you wait too long.",
-		TextXAlignment = Enum.TextXAlignment.Left,
+		TextXAlignment = Enum.TextXAlignment.Center,
 		ZIndex = 82, Parent = card,
 	})
 
@@ -396,12 +397,12 @@ local function openAbilitySelect(info)
 
 		local cdSeconds = def.cooldown or 0
 		local cdText = (cdSeconds >= 1)
-			and string.format("%ds COOLDOWN", math.floor(cdSeconds))
-			or string.format("%.1fs COOLDOWN", cdSeconds)
+			and string.format("%ds cooldown", math.floor(cdSeconds))
+			or string.format("%.1fs cooldown", cdSeconds)
 		make("TextLabel", {
 			Name = "Cooldown",
 			Size = UDim2.new(1, -20, 0, 14), Position = UDim2.new(0, 10, 0, 50),
-			BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
+			BackgroundTransparency = 1, Font = Enum.Font.Gotham,
 			TextColor3 = Color3.fromRGB(160, 160, 180), TextSize = 11,
 			TextXAlignment = Enum.TextXAlignment.Center,
 			Text = cdText, ZIndex = 83, Parent = cell,
@@ -420,15 +421,14 @@ local function openAbilitySelect(info)
 			Name = "Pick", AnchorPoint = Vector2.new(0.5, 1),
 			Position = UDim2.new(0.5, 0, 1, -10), Size = UDim2.new(1, -20, 0, 32),
 			BackgroundColor3 = accent, AutoButtonColor = true, Active = true,
-			Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(15, 15, 15),
-			TextSize = 14, Text = "PICK", ZIndex = 84, Parent = cell,
+			Font = Enum.Font.GothamMedium, TextColor3 = Color3.fromRGB(20, 20, 30),
+			TextSize = 14, Text = "Pick", ZIndex = 84, Parent = cell,
 		}, { corner(8) })
 
 		btn.MouseButton1Click:Connect(function()
 			Remotes.AbilitySelected:FireServer(name)
-			-- Visual confirmation: name flashes, button label changes.
 			nameLabel.TextColor3 = accent
-			btn.Text = "SELECTED"
+			btn.Text = "Selected"
 			btn.AutoButtonColor = false
 			btn.Active = false
 			task.wait(0.15)
@@ -1703,29 +1703,27 @@ end)
 -- Bottom-left lobby cluster: Store button on top of the coin balance chip.
 -- Both share the rank/leaderboard panels' navy + yellow-accent treatment
 -- so the lobby HUD reads as one cohesive design system.
--- Solid brighter navy for legibility. Earlier UIGradient math was
--- multiplying the bg color (RGB(34,36,56)) by the gradient color
--- (RGB(28,30,46)) channel-by-channel, which crushed the result to
--- near-black. Going flat with a higher base color reads cleanly.
+-- Single right-side column (rank → leaderboard btn → store → coins).
+-- Y positions are: rank panel ends at 214, lbButton 222–264, store
+-- 272–314, coins 322–354. Width 300 matches the rank panel above.
 local storeButton = make("TextButton", {
-	Name = "StoreButton", AnchorPoint = Vector2.new(0, 1),
-	Position = UDim2.new(0, 16, 1, -58), Size = UDim2.new(0, 200, 0, 42),
-	BackgroundColor3 = Color3.fromRGB(60, 62, 90), AutoButtonColor = true,
-	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 230, 140),
+	Name = "StoreButton", AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -16, 0, 272), Size = UDim2.new(0, 300, 0, 42),
+	BackgroundColor3 = Color3.fromRGB(46, 48, 72), AutoButtonColor = true,
+	Font = Enum.Font.GothamMedium, TextColor3 = Color3.fromRGB(245, 245, 250),
 	TextSize = 15, Text = "Store", ZIndex = 20, Parent = hud,
-}, { corner(10), stroke(2, Color3.fromRGB(255, 210, 100)) })
+}, { corner(10), stroke(1, Color3.fromRGB(90, 90, 120)) })
 storeButton.MouseButton1Click:Connect(function()
 	if state.inMatch then return end
 	local snap = refreshStore()
 	if snap then buildStore(snap) end
 end)
 
--- Coins chip sits directly under the Store button. Width matches the
--- button (200) so the two read as a stacked pair. The "◆ N" content is
--- center-aligned for a clean balance.
+-- Coins chip sits directly under the Store button as the bottom row of
+-- the right-side column. Same width (300) so the column reads as one.
 local coinsChip = make("Frame", {
-	Name = "CoinsChip", AnchorPoint = Vector2.new(0, 1),
-	Position = UDim2.new(0, 16, 1, -12), Size = UDim2.new(0, 200, 0, 32),
+	Name = "CoinsChip", AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(1, -16, 0, 322), Size = UDim2.new(0, 300, 0, 32),
 	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.05,
 	BorderSizePixel = 0, ZIndex = 20, Parent = hud,
 }, { corner(10), stroke(1, Color3.fromRGB(70, 70, 95)) })
@@ -1960,12 +1958,11 @@ end)
 -- Leaderboard panel docks to the right edge so it never blocks the center
 -- of the screen. Same dark-navy + yellow-accent treatment as the rank
 -- panel below it for visual cohesion.
--- Panel docks below the rank panel + button cluster (rank ends at y=214,
--- button at 222–262, panel starts at 270). Width matches so the column
--- reads as a single block.
+-- Panel docks below the entire right-side column (coins ends at y=354).
+-- Same 300 width so the column stays consistent.
 local lbPanel = make("Frame", {
 	Name = "Leaderboard", AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(1, -16, 0, 270), Size = UDim2.new(0, 300, 0, 380),
+	Position = UDim2.new(1, -16, 0, 362), Size = UDim2.new(0, 300, 0, 320),
 	BackgroundColor3 = Color3.fromRGB(20, 22, 36), BackgroundTransparency = 0.05,
 	BorderSizePixel = 0, Visible = false, ZIndex = 90, Parent = hud,
 }, { corner(12), stroke(1, Color3.fromRGB(70, 70, 95)) })
@@ -2152,15 +2149,15 @@ lbCloseBtn.MouseButton1Click:Connect(function() toggleLeaderboard(false) end)
 -- Leaderboard button: docked to the top-right corner so it lives next to
 -- the panel it opens. Compact size + trophy glyph keeps it readable on
 -- mobile without crowding the lobby.
--- Sits directly below the rank panel for a tight cluster on the right.
--- Same width as the rank panel (300) so the two read as a single column.
+-- Same flat treatment as the Store button. No emoji (renders
+-- unreliably across platforms) and no yellow tint (caused glow).
 local lbButton = make("TextButton", {
 	Name = "LBButton", AnchorPoint = Vector2.new(1, 0),
 	Position = UDim2.new(1, -16, 0, 222), Size = UDim2.new(0, 300, 0, 42),
-	BackgroundColor3 = Color3.fromRGB(60, 62, 90), AutoButtonColor = true,
-	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 230, 140),
-	TextSize = 14, Text = "🏆  Top Players", ZIndex = 18, Parent = hud,
-}, { corner(10), stroke(2, Color3.fromRGB(255, 210, 100)) })
+	BackgroundColor3 = Color3.fromRGB(46, 48, 72), AutoButtonColor = true,
+	Font = Enum.Font.GothamMedium, TextColor3 = Color3.fromRGB(245, 245, 250),
+	TextSize = 14, Text = "Top Players", ZIndex = 18, Parent = hud,
+}, { corner(10), stroke(1, Color3.fromRGB(90, 90, 120)) })
 lbButton.MouseButton1Click:Connect(function()
 	if state.inMatch then return end
 	toggleLeaderboard()
