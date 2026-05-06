@@ -203,29 +203,45 @@ local function buildHUD()
 		TextStrokeTransparency = 1, TextSize = 80, Text = "",
 		Visible = false, Parent = hud })
 
+	-- Centered welcome banner above the player. Wider with a tighter
+	-- vertical layout so the title and the two instruction lines sit in
+	-- a clean three-row stack. Lives 12s then fades.
 	local welcome = make("Frame", { Name = "Welcome", AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 90), Size = UDim2.new(0, 460, 0, 100),
-		BackgroundColor3 = Color3.fromRGB(18, 18, 28), BackgroundTransparency = 0.15,
-		Parent = hud }, { corner(10), stroke(1, Color3.fromRGB(60, 60, 80)) })
+		Position = UDim2.new(0.5, 0, 0, 96), Size = UDim2.new(0, 540, 0, 116),
+		BackgroundColor3 = Color3.fromRGB(18, 20, 32), BackgroundTransparency = 0.1,
+		Parent = hud }, { corner(12), stroke(1, Color3.fromRGB(80, 80, 110)) })
 	make("Frame", { Name = "Accent", Size = UDim2.new(1, 0, 0, 4),
 		BackgroundColor3 = Color3.fromRGB(255, 220, 110), BorderSizePixel = 0,
 		Parent = welcome }, { corner(2) })
-	make("TextLabel", { Size = UDim2.new(1, -20, 0, 28), Position = UDim2.new(0, 10, 0, 12),
-		BackgroundTransparency = 1, Font = Enum.Font.GothamMedium,
-		TextColor3 = Color3.fromRGB(245, 245, 250), TextSize = 20,
+	make("TextLabel", { Size = UDim2.new(1, -24, 0, 28), Position = UDim2.new(0, 12, 0, 12),
+		BackgroundTransparency = 1, Font = Enum.Font.GothamBold,
+		TextColor3 = Color3.fromRGB(245, 230, 170), TextSize = 20,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Text = "Superpower Showdown", Parent = welcome })
-	make("TextLabel", { Size = UDim2.new(1, -20, 0, 18), Position = UDim2.new(0, 10, 0, 44),
+		Text = "Welcome to Superpower Showdown", Parent = welcome })
+	make("TextLabel", { Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 46),
 		BackgroundTransparency = 1, Font = Enum.Font.Gotham,
-		TextColor3 = Color3.fromRGB(180, 220, 255), TextSize = 13,
+		TextColor3 = Color3.fromRGB(220, 220, 240), TextSize = 13,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Text = "Blue pads  →  1v1 vs a real player", Parent = welcome })
-	make("TextLabel", { Size = UDim2.new(1, -20, 0, 18), Position = UDim2.new(0, 10, 0, 66),
+		Text = "Step on a colored duel pad — matching colors play each other.", Parent = welcome })
+	make("TextLabel", { Size = UDim2.new(1, -24, 0, 18), Position = UDim2.new(0, 12, 0, 68),
 		BackgroundTransparency = 1, Font = Enum.Font.Gotham,
 		TextColor3 = Color3.fromRGB(170, 245, 180), TextSize = 13,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Text = "Green pad  →  Practice vs AI", Parent = welcome })
-	task.delay(10, function() if welcome and welcome.Parent then welcome:Destroy() end end)
+		Text = "Or step on the green pad to train against an AI bot.", Parent = welcome })
+	make("TextLabel", { Size = UDim2.new(1, -24, 0, 16), Position = UDim2.new(0, 12, 0, 90),
+		BackgroundTransparency = 1, Font = Enum.Font.Gotham,
+		TextColor3 = Color3.fromRGB(150, 150, 175), TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Text = "LEFT-CLICK to attack    •    E for ability    •    TAB for top players",
+		Parent = welcome })
+	task.delay(12, function()
+		if welcome and welcome.Parent then
+			TweenService:Create(welcome, TweenInfo.new(0.4),
+				{ BackgroundTransparency = 1 }):Play()
+			task.wait(0.45)
+			if welcome.Parent then welcome:Destroy() end
+		end
+	end)
 end
 
 buildHUD()
@@ -1687,22 +1703,17 @@ end)
 -- Bottom-left lobby cluster: Store button on top of the coin balance chip.
 -- Both share the rank/leaderboard panels' navy + yellow-accent treatment
 -- so the lobby HUD reads as one cohesive design system.
+-- Solid brighter navy for legibility. Earlier UIGradient math was
+-- multiplying the bg color (RGB(34,36,56)) by the gradient color
+-- (RGB(28,30,46)) channel-by-channel, which crushed the result to
+-- near-black. Going flat with a higher base color reads cleanly.
 local storeButton = make("TextButton", {
 	Name = "StoreButton", AnchorPoint = Vector2.new(0, 1),
 	Position = UDim2.new(0, 16, 1, -58), Size = UDim2.new(0, 200, 0, 42),
-	BackgroundColor3 = Color3.fromRGB(34, 36, 56), AutoButtonColor = true,
-	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 220, 110),
+	BackgroundColor3 = Color3.fromRGB(60, 62, 90), AutoButtonColor = true,
+	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 230, 140),
 	TextSize = 15, Text = "Store", ZIndex = 20, Parent = hud,
-}, { corner(10), stroke(1, Color3.fromRGB(220, 180, 80)) })
--- Subtle top-bright/bottom-dark gradient gives the button a sense of
--- depth without losing the flat, "modern Roblox UI" feel.
-local storeGradient = Instance.new("UIGradient")
-storeGradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(48, 50, 74)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(28, 30, 46)),
-})
-storeGradient.Rotation = 90
-storeGradient.Parent = storeButton
+}, { corner(10), stroke(2, Color3.fromRGB(255, 210, 100)) })
 storeButton.MouseButton1Click:Connect(function()
 	if state.inMatch then return end
 	local snap = refreshStore()
@@ -2146,17 +2157,10 @@ lbCloseBtn.MouseButton1Click:Connect(function() toggleLeaderboard(false) end)
 local lbButton = make("TextButton", {
 	Name = "LBButton", AnchorPoint = Vector2.new(1, 0),
 	Position = UDim2.new(1, -16, 0, 222), Size = UDim2.new(0, 300, 0, 42),
-	BackgroundColor3 = Color3.fromRGB(34, 36, 56), AutoButtonColor = true,
-	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 220, 110),
+	BackgroundColor3 = Color3.fromRGB(60, 62, 90), AutoButtonColor = true,
+	Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(255, 230, 140),
 	TextSize = 14, Text = "🏆  Top Players", ZIndex = 18, Parent = hud,
-}, { corner(10), stroke(1, Color3.fromRGB(220, 180, 80)) })
-local lbGradient2 = Instance.new("UIGradient")
-lbGradient2.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(48, 50, 74)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(28, 30, 46)),
-})
-lbGradient2.Rotation = 90
-lbGradient2.Parent = lbButton
+}, { corner(10), stroke(2, Color3.fromRGB(255, 210, 100)) })
 lbButton.MouseButton1Click:Connect(function()
 	if state.inMatch then return end
 	toggleLeaderboard()
