@@ -334,15 +334,17 @@ local function openAbilitySelect(info)
 		ZIndex = 83, Parent = opponentBox,
 	})
 
-	-- Big circular timer floating top-center.
+	-- Compact countdown chip docked top-left so it doesn't overlap with
+	-- the centered title. Fixed TextSize keeps it from looking
+	-- aggressively bold the way TextScaled + GothamBlack did.
 	local timerLabel = make("TextLabel", {
-		Name = "Timer", AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 18), Size = UDim2.new(0, 70, 0, 70),
+		Name = "Timer", AnchorPoint = Vector2.new(0, 0),
+		Position = UDim2.new(0, 24, 0, 22), Size = UDim2.new(0, 56, 0, 56),
 		BackgroundColor3 = Color3.fromRGB(28, 28, 42), BackgroundTransparency = 0.1,
-		Font = Enum.Font.GothamBlack, TextColor3 = Color3.fromRGB(255, 230, 120),
-		TextScaled = true, Text = tostring(GameConfig.AbilitySelectDuration),
+		Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(245, 230, 170),
+		TextSize = 26, Text = tostring(GameConfig.AbilitySelectDuration),
 		ZIndex = 83, Parent = card,
-	}, { corner(35), stroke(2, Color3.fromRGB(255, 230, 120)) })
+	}, { corner(28), stroke(1, Color3.fromRGB(180, 160, 110)) })
 
 	local grid = make("Frame", {
 		Position = UDim2.new(0, 24, 0, 110), Size = UDim2.new(1, -48, 1, -130),
